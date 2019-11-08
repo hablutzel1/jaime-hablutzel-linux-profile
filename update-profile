@@ -1,0 +1,3 @@
+# TODO instead of simply replacing the local .bash_aliases, maybe it would be better to merge against it.
+cp $( dirname "${BASH_SOURCE[0]}")/.bash_aliases ~/.bash_aliases && echo ".bash_aliases updated"
+. ~/.bash_aliases
