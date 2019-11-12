@@ -1,4 +1,12 @@
 ###########################
+# General
+###########################
+urlencode() { python -c "import urllib; print urllib.quote('''$1''', '')"; }
+
+# To allow to visually differentiate STDOUT from STDERR
+color() { "$@" 2>&1>&3|sed 's,.*,\x1B[31m&\x1B[0m,'>&2; } 3>&1
+
+###########################
 # iptables/firewall related
 ###########################
 function il {
