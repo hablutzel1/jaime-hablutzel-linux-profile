@@ -1,3 +1,4 @@
 # TODO instead of simply replacing the local .bash_aliases, maybe it would be better to merge against it.
+# TODO it has been observed that .bash_aliases is names .alias in systems like openSUSE. Make this script to copy the script to the correct place or to receive the expected name for the aliases file.
 cp $( dirname "${BASH_SOURCE[0]}")/.bash_aliases ~/.bash_aliases && echo ".bash_aliases updated"
 . ~/.bash_aliases
