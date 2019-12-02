@@ -9,3 +9,6 @@ Then source the script with something like this:
 ```
 $ source ~/.jaime-hablutzel-linux-profile/update-profile
 ```
+# TODOS #
+
+* Check if there is any smarter way to share these files across Linux servers, e.g. Puppet, Chef, etc.
