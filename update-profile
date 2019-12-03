@@ -4,6 +4,7 @@ cp $( dirname "${BASH_SOURCE[0]}")/.bash_aliases ~/.bash_aliases && echo ".bash_
 . ~/.bash_aliases
 
 # TODO check: maybe cp can be used to create ~/.ssh/
+# TODO make the following command not to fail if ~/.ssh already exist.
 mkdir ~/.ssh/
 cp $( dirname "${BASH_SOURCE[0]}")/authorized_keys ~/.ssh/authorized_keys
 chmod 700 ~/.ssh
