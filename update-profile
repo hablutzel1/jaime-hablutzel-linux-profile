@@ -2,3 +2,9 @@
 # TODO it has been observed that .bash_aliases is names .alias in systems like openSUSE. Make this script to copy the script to the correct place or to receive the expected name for the aliases file.
 cp $( dirname "${BASH_SOURCE[0]}")/.bash_aliases ~/.bash_aliases && echo ".bash_aliases updated"
 . ~/.bash_aliases
+
+# TODO check: maybe cp can be used to create ~/.ssh/
+mkdir ~/.ssh/
+cp $( dirname "${BASH_SOURCE[0]}")/authorized_keys ~/.ssh/authorized_keys
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
