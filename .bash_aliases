@@ -21,3 +21,8 @@ alias il6='sudo ip6tables -L -n -v --line-numbers'
 ###########################
 # TODO try to provide the default password too, i.e. 'secret'.
 alias console="sudo pct console $1 -escape '^l'"
+
+###########################
+# Git repositories related, e.g. etckeeper
+###########################
+alias sgs="sudo git status"
