@@ -10,11 +10,13 @@ Then configure the following Git hook so `update-profile` is automatically execu
 $ ~/.jaime-hablutzel-linux-profile/symlink-git-hooks
 ```
 
-Now, only for this first pull it is required to source update-profile explicitely with something like this:
+Now, to apply aliases updates perform:
 
 ```
 $ source ~/.jaime-hablutzel-linux-profile/update-profile
 ```
+
+Or logout and log in again.
 
 # TODOS #
 
