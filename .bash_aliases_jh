@@ -27,3 +27,5 @@ alias console="sudo pct console $1 -escape '^l'"
 ###########################
 alias sgs="sudo git status"
 alias sgd="sudo git diff"
+alias sgds="sudo git diff --staged"
+alias sgl="sudo git log"
