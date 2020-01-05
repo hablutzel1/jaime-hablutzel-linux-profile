@@ -20,3 +20,10 @@ cp $( dirname "${BASH_SOURCE[0]}")/authorized_keys ~/.ssh/authorized_keys
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/authorized_keys
 echo "SSH authorized keys updated"
+
+######
+# Updating screen settings.
+######
+# TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
+cp $( dirname "${BASH_SOURCE[0]}")/.screenrc ~/.screenrc
+echo "~/.screenrc updated"
