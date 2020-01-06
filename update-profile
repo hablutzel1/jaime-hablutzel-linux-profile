@@ -1,3 +1,7 @@
+# TODO make this update/overwrite the values for:
+#HISTSIZE=-1
+#HISTFILESIZE=-1
+
 ######
 # Updating aliases
 # It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use .bash_aliases_jh just to keep it agnostic from every different distribution.
