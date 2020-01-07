@@ -23,6 +23,7 @@ mkdir -p ~/.ssh/
 cp $( dirname "${BASH_SOURCE[0]}")/authorized_keys ~/.ssh/authorized_keys
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/authorized_keys
+# TODO indicate if authorized_keys was "updated" or "overwritten"
 echo "SSH authorized keys updated"
 
 ######
@@ -30,4 +31,5 @@ echo "SSH authorized keys updated"
 ######
 # TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
 cp $( dirname "${BASH_SOURCE[0]}")/.screenrc ~/.screenrc
+# TODO indicate if this file was "updated" or "overwritten"
 echo "~/.screenrc updated"
