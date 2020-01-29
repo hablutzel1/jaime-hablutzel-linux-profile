@@ -36,7 +36,6 @@ cp $( dirname "${BASH_SOURCE[0]}")/.screenrc ~/.screenrc
 echo "~/.screenrc updated"
 
 # Starting screen automatically on login
-# TODO instead of removing and adding the line again, maybe just add if it isn't found.
 sed -i '/screen -R/d' ~/.profile
-echo "screen -R" >> ~/.profile
+echo 'if [ -z "$STY" ]; then screen -R; fi' >> ~/.profile
 echo "screen configured to be automatically executed on login"
