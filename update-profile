@@ -36,6 +36,13 @@ cp $( dirname "${BASH_SOURCE[0]}")/.screenrc ~/.screenrc
 echo "~/.screenrc updated"
 
 # Starting screen automatically on login
-sed -i '/screen -R/d' ~/.profile
-echo 'if [ -z "$STY" ]; then screen -R; fi' >> ~/.profile
+[ -f ~/.bash_profile ] && sed -i '/screen -R/d' ~/.bash_profile
+[ -f ~/.profile ] && sed -i '/screen -R/d' ~/.profile
+# TODO try to simplify the following.
+FILE=~/.bash_profile
+if [ ! -f "$FILE" ]; then
+    FILE=~/.profile
+fi
+echo 'if [ -z "$STY" ]; then screen -R; fi' >> $FILE
+
 echo "screen configured to be automatically executed on login"
