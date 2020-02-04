@@ -21,4 +21,5 @@ Anyway, after a Git pull it is required to log out and log in again.
 
 # TODOS #
 
-* Check if there is any smarter way to share these files (and keep them updated) across Linux servers, e.g. Puppet, Chef, etc. Maybe just set up an user cron to perform a `git pull` every x minutes or so and only update the profile if incoming changes are found.
+* Explore other alternatives to share these files (and keep them updated) across Linux servers, e.g. Puppet, Chef, etc. 
+* Try to automate the installation (or at least clearly warn about the absence) of dependencies, e.g. 'screen', 'crontab', etc.
