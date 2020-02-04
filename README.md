@@ -21,5 +21,8 @@ Anyway, after a Git pull it is required to log out and log in again.
 
 # TODOS #
 
+* Make this repository private while keeping it comfortable to use it from any place, even from third party infrastructure.
 * Explore other alternatives to share these files (and keep them updated) across Linux servers, e.g. Puppet, Chef, etc. 
 * Try to automate the installation (or at least clearly warn about the absence) of dependencies, e.g. 'screen', 'crontab', etc.
+* Try to automate the installation of all the other tools that I use in a regular basis, e.g.
+  * emacs-nox
