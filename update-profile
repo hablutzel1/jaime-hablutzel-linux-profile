@@ -29,12 +29,10 @@ echo "SSH authorized keys updated"
 ######
 # Screen configuration
 ######
-
 # TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
 cp $( dirname "${BASH_SOURCE[0]}")/.screenrc ~/.screenrc
 # TODO indicate if this file was "updated" or "overwritten"
 echo "~/.screenrc updated"
-
 # Starting screen automatically on login
 [ -f ~/.bash_profile ] && sed -i '/screen -R/d' ~/.bash_profile
 [ -f ~/.profile ] && sed -i '/screen -R/d' ~/.profile
@@ -44,5 +42,17 @@ if [ ! -f "$FILE" ]; then
     FILE=~/.profile
 fi
 echo 'if [ -z "$STY" ]; then screen -R; fi' >> $FILE
-
 echo "screen configured to be automatically executed on login"
+
+####
+# User crontab configuration
+####
+tmpcronfile=$(mktemp)
+crontab -l >"$tmpcronfile"
+sed -i '/.jaime-hablutzel-linux-profile/d' $tmpcronfile
+# TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
+echo >> $tmpcronfile
+echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull >/dev/null" >> $tmpcronfile
+crontab $tmpcronfile
+rm -f $tmpcronfile
+echo "crontab installed to update this repo every 5 minutes"
