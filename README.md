@@ -4,20 +4,11 @@ Start downloading repo with:
 $ git clone https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git ~/.jaime-hablutzel-linux-profile
 ```
 
-Now, to apply aliases updates perform:
+Now, to configure the profile execute:
 
 ```
-$ source ~/.jaime-hablutzel-linux-profile/update-profile
+$ source ~/.jaime-hablutzel-linux-profile/configure-profile
 ```
-# Configure Git hook for next pulls #
-
-Optionally, configure the following Git hook so `update-profile` is automatically executed for the next pull:
-
-```
-$ ~/.jaime-hablutzel-linux-profile/symlink-git-hooks
-```
-
-Anyway, after a Git pull it is required to log out and log in again.
 
 # TODOS #
 

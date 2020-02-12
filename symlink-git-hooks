@@ -1,5 +1,0 @@
-#!/bin/bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-# TODO maybe link the full 'hooks' directory instead of each hook.
-ln -sf $DIR/git_hooks/post-merge $DIR/.git/hooks/post-merge
-echo "git hooks updated"

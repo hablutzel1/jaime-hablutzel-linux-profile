@@ -2,11 +2,13 @@
 #HISTSIZE=-1
 #HISTFILESIZE=-1
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 ######
 # Updating aliases
 # It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use .bash_aliases_jh just to keep it agnostic from every different distribution.
 ######
-cp $( dirname "${BASH_SOURCE[0]}")/.bash_aliases_jh ~/.bash_aliases_jh
+cp $DIR/.bash_aliases_jh ~/.bash_aliases_jh
 . ~/.bash_aliases_jh
 # Removing the line if it already exists.
 sed -i '/\.bash_aliases_jh/d' ~/.bashrc
@@ -20,7 +22,7 @@ echo ".bash_aliases_jh updated"
 #######
 mkdir -p ~/.ssh/
 # TODO check: maybe we should append instead of fully replace?.
-cp $( dirname "${BASH_SOURCE[0]}")/authorized_keys ~/.ssh/authorized_keys
+cp $DIR/authorized_keys ~/.ssh/authorized_keys
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/authorized_keys
 # TODO indicate if authorized_keys was "updated" or "overwritten"
@@ -30,7 +32,7 @@ echo "SSH authorized keys updated"
 # Screen configuration
 ######
 # TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
-cp $( dirname "${BASH_SOURCE[0]}")/.screenrc ~/.screenrc
+cp $DIR/.screenrc ~/.screenrc
 # TODO indicate if this file was "updated" or "overwritten"
 echo "~/.screenrc updated"
 # Starting screen automatically on login
@@ -45,6 +47,13 @@ echo 'if [ -z "$STY" ]; then screen -R; fi' >> $FILE
 echo "screen configured to be automatically executed on login"
 
 ####
+# Git hook configuration
+####
+# TODO maybe link the full 'hooks' directory instead of each hook.
+ln -sf $DIR/git_hooks/post-merge $DIR/.git/hooks/post-merge
+echo "git hook installed to execute this script automatically when pulling changes"
+
+####
 # User crontab configuration
 ####
 tmpcronfile=$(mktemp)
@@ -55,4 +64,4 @@ echo >> $tmpcronfile
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull >/dev/null" >> $tmpcronfile
 crontab $tmpcronfile
 rm -f $tmpcronfile
-echo "crontab installed to update this repo every 5 minutes"
+echo "crontab installed to pull changes for this repo every 5 minutes"

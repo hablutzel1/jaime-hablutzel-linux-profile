@@ -1,2 +1,6 @@
 #!/usr/bin/env bash
-source update-profile
+# Not sourcing it here to avoid confusion as that 'sourcing' won't affect parent shell (if any) state.
+bash configure-profile
+
+# TODO consider that it is cron the one that will be executing this hook script most of the time, so a method to warn a user (or apply the changes immediately for him) when he returns to the screen session should be found, maybe something like the MOTD or similar that is displayed to the screen sessions on reattaching or even better check if there is any way to trigger an alert for all connected screen sessions so the connected users can get to know immediately that cron has pulled new changes.
+echo "IMPORTANT: It is required to log out and log in again to apply the profile changes"
