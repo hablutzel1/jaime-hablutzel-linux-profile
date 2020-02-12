@@ -12,7 +12,7 @@ $ source ~/.jaime-hablutzel-linux-profile/configure-profile
 
 # TODOS #
 
-* Make this repository private while keeping it comfortable to use it from any place, even from third party infrastructure.
+* Evaluate to make this repository private (because it might be dangerously providing information about my environment) while keeping it comfortable to use it from any place, even from third party infrastructure.
 * Explore other alternatives to share these files (and keep them updated) across Linux servers, e.g. Puppet, Chef, etc. 
 * Try to automate the installation (or at least clearly warn about the absence) of dependencies, e.g. 'screen', 'crontab', etc.
 * Try to automate the installation of all the other tools that I use in a regular basis, e.g.
