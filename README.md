@@ -18,3 +18,5 @@ $ source ~/.jaime-hablutzel-linux-profile/configure-profile
 * Try to automate the installation (or at least clearly warn about the absence) of dependencies, e.g. 'screen', 'crontab', etc.
 * Try to automate the installation of all the other tools that I use in a regular basis, e.g.
   * emacs-nox
+* Make some options configurable in a Git ignored file (e.g. `options.conf`):
+  * Use (or not) screen as it might be undesirable in certain environments, e.g. a regular desktop environment.
