@@ -25,11 +25,11 @@ alias console="sudo pct console $1 -escape '^l'"
 ###########################
 # Git repositories related, e.g. etckeeper
 ###########################
-alias sgs="sudo git status"
-alias sgh="sudo git show "
-alias sgd="sudo git diff"
-alias sgds="sudo git diff --staged"
-alias sgl="sudo git log"
+alias gs="git status"
+alias gh="git show "
+alias gd="git diff"
+alias gds="git diff --staged"
+alias gl="git log"
 alias sga="sudo git add "
 alias sgaa="sudo git add -A"
 alias sgc="sudo -E git commit -m "
