@@ -44,6 +44,7 @@ function update_profile_file() {
 ######
 # Updating preferred editor
 ######
+# TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc.
 update_profile_file 'export VISUAL' 'export VISUAL=emacs; export EDITOR="$VISUAL"'
 echo "preferred editor is now emacs"
 
