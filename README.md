@@ -1,3 +1,5 @@
+# Installation #
+
 Start downloading repo with:
 
 ```
@@ -10,6 +12,12 @@ Now, to configure the profile execute:
 $ source ~/.jaime-hablutzel-linux-profile/configure-profile
 ```
 
+# Options #
+
+The following options could be set in the beginning of `~/.bash_profile`:
+
+- `JHLP_NO_AUTOLOAD_SCREEN=1` to not load screen automatically as it might be undesirable in certain environments, e.g. a regular desktop environment.
+
 # TODOS #
 
 * Evaluate to make this repository private (because it might be dangerously providing information about my environment) while keeping it comfortable to use it from any place, even from third party infrastructure.
@@ -18,5 +26,3 @@ $ source ~/.jaime-hablutzel-linux-profile/configure-profile
 * Try to automate the installation (or at least clearly warn about the absence) of dependencies, e.g. 'screen', 'crontab', etc.
 * Try to automate the installation of all the other tools that I use in a regular basis, e.g.
   * emacs-nox
-* Make some options configurable in a Git ignored file (e.g. `options.conf`):
-  * Use (or not) screen as it might be undesirable in certain environments, e.g. a regular desktop environment.

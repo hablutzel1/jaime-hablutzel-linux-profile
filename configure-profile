@@ -43,7 +43,7 @@ FILE=~/.bash_profile
 if [ ! -f "$FILE" ]; then
     FILE=~/.profile
 fi
-echo 'if [ -z "$STY" ]; then screen -R; fi' >> $FILE
+echo 'if [ -z "$JHLP_NO_AUTOLOAD_SCREEN" ] && [ -z "$STY" ]; then screen -R; fi' >> $FILE
 echo "screen configured to be automatically executed on login"
 
 ####
