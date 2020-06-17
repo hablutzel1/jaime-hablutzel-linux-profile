@@ -20,7 +20,7 @@ The following options could be set in the beginning of `~/.bash_profile`:
 
 # TODOS #
 
-* Evaluate to make this repository private (because it might be dangerously providing information about my environment) while keeping it comfortable to use it from any place, even from third party infrastructure.
+* Evaluate to make this repository private (but does it really dangerously provide information about my environment?) while keeping it comfortable to use it from any place, even from third party infrastructure. Maybe it would be a good idea to publish it in a Blobfish's managed Git server, otherwise too much trust in being put in GitHub.
 * Check if there is any way to safely share my current unique password using this, e.g. by salting and iterating a lot over it.
 * Explore other alternatives to share these files (and keep them updated) across Linux servers, e.g. Ansible, Puppet, Chef, etc. If possible try to migrate to one of these standard tools. 
 * Try to automate the installation (or at least clearly warn about the absence) of dependencies, e.g. 'screen', 'crontab', etc.
