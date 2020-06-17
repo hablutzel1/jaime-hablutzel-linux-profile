@@ -26,3 +26,4 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Try to automate the installation (or at least clearly warn about the absence) of dependencies, e.g. 'screen', 'crontab', etc.
 * Try to automate the installation of all the other tools that I use in a regular basis, e.g.
   * emacs-nox
+* Evaluate to use this to increment/replicate the list of my known SSH hosts, e.g. Bitbucket or GitHub. Do not forget to explore SSHFP too.
