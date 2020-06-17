@@ -60,11 +60,15 @@ update_profile_file 'screen -R' 'if [ -z "$JHLP_NO_AUTOLOAD_SCREEN" ] && [ -z "$
 echo "screen configured to be automatically executed on login"
 
 ####
-# Git hook configuration
+# Git configuration
 ####
+git config --global user.name "Jaime Hablutzel"
+git config --global user.email "hablutzel1@gmail.com"
+echo "Git user.name and user.email configured"
+
 # TODO maybe link the full 'hooks' directory instead of each hook.
 ln -sf $DIR/git_hooks/post-merge $DIR/.git/hooks/post-merge
-echo "git hook installed to execute this script automatically when pulling changes"
+echo "Installed Git hook to execute this script automatically when pulling changes"
 
 ####
 # User crontab configuration
