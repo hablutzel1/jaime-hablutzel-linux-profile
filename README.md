@@ -1,4 +1,3 @@
-test commit 6
 # Installation #
 
 Start downloading repo with:
