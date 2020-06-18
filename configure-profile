@@ -78,7 +78,8 @@ crontab -l >"$tmpcronfile"
 sed -i '/.jaime-hablutzel-linux-profile/d' $tmpcronfile
 # TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
 echo >> $tmpcronfile
-echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull >/dev/null" >> $tmpcronfile
+# TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
+echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
 crontab $tmpcronfile
 rm -f $tmpcronfile
 echo "crontab installed to pull changes for this repo every 5 minutes"
