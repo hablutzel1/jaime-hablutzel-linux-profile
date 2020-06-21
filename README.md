@@ -27,4 +27,4 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Try to automate the installation of all the other tools that I use in a regular basis, e.g.
   * emacs-nox
 * Evaluate to use this to increment/replicate the list of my known SSH hosts, e.g. Bitbucket or GitHub. Do not forget to explore SSHFP too. Maybe this script could install its own copy of .ssh/known_hosts and we could additionally provide a companion script to help update the bundled known_hosts from the known_hosts of the current system (ignoring duplicates). Anyway, look for a more standard solution for this as it has to be a very common productivity affecting problem. Evaluate possible integration with my Termius list of known hosts.
-* Evaluate to provide a full template for .bash* files, see https://github.com/AlbanAndrieu/ansible-shell/blob/master/templates/.bashrc.j2.
+* Evaluate to provide a full template for .bash* files and just let .old backups for the originals, see https://github.com/AlbanAndrieu/ansible-shell/blob/master/templates/.bashrc.j2.
