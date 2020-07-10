@@ -33,5 +33,8 @@ alias gl="git log"
 alias gaa="git add -A"
 alias gc="git commit -m "
 
-
-
+###########################
+# SSH
+##########################
+# ssh alias to close connections after 300 seconds of inactivity. TODO check: having a open editor like Emacs apparently doesn't count as inactivity.
+ssh() { /usr/bin/ssh -t "$@" TMOUT=300 bash -l; }

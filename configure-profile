@@ -58,6 +58,8 @@ echo "~/.screenrc updated"
 # Starting screen automatically on login
 update_profile_file 'screen -R' 'if [ -z "$JHLP_NO_AUTOLOAD_SCREEN" ] && [ -z "$STY" ]; then screen -R; fi'
 echo "screen configured to be automatically executed on login"
+# Shell TMOUT doesn't apply for screen sessions as we prefer to detach them via "idle" in .screenrc.
+update_profile_file 'unset TMOUT' 'if [ -n "$STY" ]; then unset TMOUT; fi'
 
 ####
 # Git configuration

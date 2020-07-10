@@ -3,6 +3,8 @@ defscrollback 10000
 # Starting screens as login shells in an effort to keep the environment as similar as possible as the parent's, e.g. if the parent ~/.profile sets the LD_LIBRARY_PATH, a non-login screen would just lose that environment variable (https://superuser.com/a/235773/89031) while a login screen shell would re-read it from ~/.profile.
 # TODO research if there could be problems because of the parent shell being loaded as a login shell and each screen session being loaded as a login shell too, e.g. ~/.profile getting confused because it found some values already set.
 defshell -bash
+# Screen detaches after 300 seconds of inactivity.
+idle 300 detach
 vbell "off"
 termcapinfo xterm* ti@:te@
 bind n focus next
