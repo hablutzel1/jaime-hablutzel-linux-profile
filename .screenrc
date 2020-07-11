@@ -3,7 +3,8 @@ defscrollback 10000
 # Starting screens as login shells in an effort to keep the environment as similar as possible as the parent's, e.g. if the parent ~/.profile sets the LD_LIBRARY_PATH, a non-login screen would just lose that environment variable (https://superuser.com/a/235773/89031) while a login screen shell would re-read it from ~/.profile.
 # TODO research if there could be problems because of the parent shell being loaded as a login shell and each screen session being loaded as a login shell too, e.g. ~/.profile getting confused because it found some values already set.
 defshell -bash
-# Screen detaches after 300 seconds of inactivity.
+# Just in case I forget to lock my workstation, screen detaches after sometime of inactivity, then the SSH connection itself will be closed after $TMOUT and if my SSH token is not connected to the workstation anymore, for a third party it will not be possible to reconnect through SSH to re-gain access to the screen session.
+# TODO check: if there was any sensitive information being displayed in the console (e.g. a password), after the automatic detach (and even the shell TMOUT) it might be still be possible to read it, so before detaching try to clear the entire screen output (I think that it will require to revert 5ed24fdee4719f899cb9c38ad88a471c95cf92f3 too).
 idle 900 detach
 vbell "off"
 termcapinfo xterm* ti@:te@
