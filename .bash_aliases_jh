@@ -5,6 +5,8 @@ urlencode() { python -c "import urllib; print urllib.quote('''$1''', '')"; }
 
 # To allow to visually differentiate STDOUT from STDERR
 color() { "$@" 2>&1>&3|sed 's,.*,\x1B[31m&\x1B[0m,'>&2; } 3>&1
+# To become root preserving the environment. Note that the HOME env variable is being set to workaround a possible 'Defaults always_set_home' in /etc/sudoers, but it might have security implications (for example, in openSUSE Leap v15.1 the /etc/sudoers says the following: "Prevent environment variables from influencing programs in an unexpected or harmful way (CVE-2005-2959, CVE-2005-4158, CVE-2006-0151)" on top of that line).
+alias super='sudo -Es HOME=$HOME'
 
 ###########################
 # iptables/firewall related
