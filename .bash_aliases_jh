@@ -10,10 +10,9 @@ super() { history -a; sudo -Es HOME=$HOME; }
 
 # TODO look if sudo by itself could provide for the following functionality (see https://confluence.blobfish.pe/x/kIdMAw).
 sudo () {
-local command=$@
-read -rp "Shall command $command be executed? (y/N): "
-local YORN_RESP="$(grep -i "[YN]" <<<"${REPLY:0:1}" || echo 'Y')"
-if [[ "$YORN_RESP" == [Yy] ]]; then
+local sudoargs=$@
+read -erp "Shall \"$sudoargs\" be executed with sudo? (y/N): " -i "y"
+if [[ "$REPLY" == [Yy] ]]; then
 command sudo "$@"
 else
 return 1
