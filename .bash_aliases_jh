@@ -24,6 +24,7 @@ fi
 ###########################
 # TODO check is it really good practice to put 'sudo' in aliases definitions?.
 function il {
+# TODO if we are already USER=root, do not execute with "sudo" as it is not required. Maybe extract a function like: "sudo_if_not_root" and use it in this entire file.
 sudo iptables -n -v --line-numbers -L $@
 }
 alias iln='sudo iptables -L -t nat -n -v --line-numbers '
