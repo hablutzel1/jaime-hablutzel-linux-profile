@@ -30,3 +30,4 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Evaluate to provide a full template for .bash* files and just let .old backups for the originals, see https://github.com/AlbanAndrieu/ansible-shell/blob/master/templates/.bashrc.j2.
 * Evaluate to sign (with a key being held in hardware) every commit made to this repository and configure the automated `git pull` in each server to only accept incoming commits if they are signed with a previously authorized key.
 * Add the origin_ssh remote automatically as I need it from time to time.
+* Support the configuration required to send emails directly from the terminal, e.g. with mailx.
