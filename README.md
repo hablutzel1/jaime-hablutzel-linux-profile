@@ -31,3 +31,5 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Evaluate to sign (with a key being held in hardware) every commit made to this repository and configure the automated `git pull` in each server to only accept incoming commits if they are signed with a previously authorized key.
 * Add the origin_ssh remote automatically as I need it from time to time.
 * Support the configuration required to send emails directly from the terminal, e.g. with mailx.
+* Look for the way to root sessions to be prompted in a different color to reflect warning, e.g. all of the following could be painted in red: "root@server01:/etc#".
+
