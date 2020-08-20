@@ -48,6 +48,7 @@ alias gds="git diff --staged"
 alias gl="git log"
 alias gaa="git add -A"
 alias gc="git commit -m "
+alias ect="etckeeper commit \"Temporary commit.\""
 
 ###########################
 # SSH
