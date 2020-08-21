@@ -21,6 +21,12 @@ return 1
 fi
 }
 
+# TODO create a function to take full ownership of the current directory. Consider the following situations:
+# - We could have become root by using sudo. Then something like the following might be required: "chown -R ${SUDO_USER}:${SUDO_USER}".
+# - We could be in a regular user session.
+# - We could be the "root" user itself.
+# - Possibly others...
+
 ###########################
 # iptables/firewall related
 ###########################
