@@ -32,5 +32,5 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Add the origin_ssh remote automatically as I need it from time to time.
 * Support the configuration required to send emails directly from the terminal, e.g. with mailx.
 * Look for the way to root sessions to be prompted in a different color to reflect warning, e.g. all of the following could be painted in red: "root@server01:/etc#".
-* Evaluate to put my home folder under version control with etckeeper, with everything but Bash related configuration files excluded by default.
+* Evaluate to put my home folder under version control with etckeeper, with everything but Bash related configuration files excluded by default (see https://serverfault.com/questions/411494/etckeeper-on-custom-directory/411512#comment812342_411512).
 
