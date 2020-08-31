@@ -33,5 +33,5 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Support the configuration required to send emails directly from the terminal, e.g. with mailx.
 * Look for the way to root sessions to be prompted in a different color to reflect warning, e.g. all of the following could be painted in red: "root@server01:/etc#".
 * Evaluate to put my home folder under version control with etckeeper, with everything but Bash related configuration files excluded by default (see https://serverfault.com/questions/411494/etckeeper-on-custom-directory/411512#comment812342_411512).
-* Explore if GitHub imposes a quota on the number of fetches on a repository (from the same or different locations) because it was observed in `ocsp-1.llamainternal.com` that there were apparently a lot of cron/git/git-remote-http processes opened at a given time and that triggered the OOM killer.
+* Explore if GitHub imposes a quota on the number of fetches on a repository (from the same or different locations) because it was observed in `ocsp-1.llamainternal.com` that there were apparently a lot of cron/git/git-remote-http processes opened/frozen at a given time and that triggered the OOM killer.
 
