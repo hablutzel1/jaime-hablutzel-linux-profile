@@ -1,3 +1,5 @@
+# TODO check if it wouldn't be a good idea to unalias/unset everything beforehand to be able to overwrite possibly existing aliases or functions, e.g. it has been observed that trying to define a function fails if an alias with the same name is already defined.
+
 ###########################
 # General
 ###########################
@@ -21,12 +23,16 @@ return 1
 fi
 }
 
-# TODO create a function to take full ownership of the current directory. Consider the following situations:
-# - We could have become root by using sudo. Then something like the following might be required: "chown -R ${SUDO_USER}:${SUDO_USER}".
-# - We could be in a regular user session.
-# - We could be the "root" user itself.
-# - Possibly others...
-alias mine='chown -R $SUDO_USER:$SUDO_USER .'
+mine () {
+# FIXME consider OSes where the default group is not the user itself.
+# TODO check if it works if we are the "root" user itself.
+if [ -z "$SUDO_USER" ]; then
+  # TODO check if sudo is always required here, e.g. could it be avoided if the current user owns the current directory?.
+  sudo chown -R $USER:$USER .
+else
+  chown -R $SUDO_USER:$SUDO_USER .
+fi
+}
 
 ###########################
 # iptables/firewall related
