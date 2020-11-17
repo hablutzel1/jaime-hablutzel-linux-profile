@@ -17,6 +17,7 @@ $ source ~/.jaime-hablutzel-linux-profile/configure-profile
 The following options could be set in the beginning of `~/.bash_profile`:
 
 - `JHLP_NO_AUTOLOAD_SCREEN=1` to not load screen automatically as it might be undesirable in certain environments, e.g. a regular desktop environment.
+- `JHLP_DISABLE_BASH_IDLE_SESSION_TIMEOUT` to disable Bash idle sessions to get automatically closed after $BASH_IDLE_SESSION_TIMEOUT. This might be required when using a local Cygwin or WSL or when screen is not being used.
 
 # TODOS #
 

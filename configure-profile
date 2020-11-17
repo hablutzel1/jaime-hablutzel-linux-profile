@@ -49,7 +49,7 @@ update_profile_file 'export VISUAL' 'export VISUAL=emacs; export EDITOR="$VISUAL
 echo "preferred editor is now emacs"
 
 ######
-# Screen configuration
+# Bash and screen configuration
 ######
 # TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
 cp $DIR/.screenrc ~/.screenrc
@@ -58,8 +58,9 @@ echo "~/.screenrc updated"
 # Starting screen automatically on login
 update_profile_file 'screen -R' 'if [ -z "$JHLP_NO_AUTOLOAD_SCREEN" ] && [ -z "$STY" ]; then screen -R; fi'
 echo "screen configured to be automatically executed on login"
-# Shell TMOUT doesn't apply for screen sessions as we prefer to detach them via "idle" in .screenrc.
-update_profile_file 'unset TMOUT' 'if [ -n "$STY" ]; then unset TMOUT; fi'
+# Close Bash sessions after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity but do not apply it for screen sessions as we prefer to detach them via "idle" in .screenrc. TODO confirm that having an open editor like Emacs doesn't count as inactivity inside a screen session our without it.
+update_profile_file '^BASH_IDLE_SESSION_TIMEOUT=' 'BASH_IDLE_SESSION_TIMEOUT=300'
+update_profile_file 'unset TMOUT' 'if [ -z "$JHLP_DISABLE_BASH_IDLE_SESSION_TIMEOUT" ] && [ -z "$STY" ]; then TMOUT=$BASH_IDLE_SESSION_TIMEOUT; else unset TMOUT; fi'
 
 ####
 # Git configuration
