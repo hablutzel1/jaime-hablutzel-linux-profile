@@ -1,78 +1,77 @@
-# TODO make this update/overwrite the values for:
-#HISTSIZE=-1
-#HISTFILESIZE=-1
+# TODO before executing anything, validate that the current shell is Bash as this configuration script is Bash specific.
+
+# TODO check if Augeas can be used for the following purpose as it apparently could preserve formatting and location of edit. See https://stackoverflow.com/a/50323373/320594.
+function remove_matching_line() {
+    [ -f "$1" ] && sed -i "/$2/d" $1
+}
+function remove_all_matches() {
+    remove_matching_line ~/.bashrc "$1"
+    remove_matching_line ~/.bash_profile "$1"
+    remove_matching_line ~/.profile "$1"
+}
+function update_bashrc() {
+    remove_all_matches "$1"
+    echo $2 >> ~/.bashrc
+}
+function update_profile_file() {
+    remove_all_matches "$1"
+    echo $2 >> ~/.bash_profile
+}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 ######
-# Updating aliases
-# It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use .bash_aliases_jh just to keep it agnostic from every different distribution.
+# Shell configuration
+# TODO try to keep all shell configuration edits in blocks to make it easier to visually identify the configurations being managed from here or even better use dedicated files files and just source them, i.e. .bashrc_jh .bash_profile_jh. See https://superuser.com/a/224204/89031. Check if this might be somehow related too https://github.com/AlbanAndrieu/ansible-shell/blob/master/templates/.bashrc.j2.
 ######
+# TODO look for the way to prevent sourcing .bashrc if it has been already sourced with the code in the default .bash_profile.
+update_profile_file 'source "${HOME}\/.bashrc"' 'source "${HOME}/.bashrc"'
+
+# Updating aliases. It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use .bash_aliases_jh just to keep it agnostic from every different distribution.
 cp $DIR/.bash_aliases_jh ~/.bash_aliases_jh
 . ~/.bash_aliases_jh
-# Removing the line if it already exists.
-sed -i '/\.bash_aliases_jh/d' ~/.bashrc
-echo "test -s ~/.bash_aliases_jh && . ~/.bash_aliases_jh || true" >> ~/.bashrc
+update_bashrc '\.bash_aliases_jh' "test -s ~/.bash_aliases_jh && . ~/.bash_aliases_jh || true"
 test -s ~/.bash_aliases && echo "WARNING: .bash_aliases already exists. Check if there are old definitions to delete there."
 test -s ~/.alias && echo "WARNING: .alias already exists. Check if there are old definitions to delete there."
-echo ".bash_aliases_jh updated"
+
+# Updating preferred editor
+# TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc.
+update_profile_file 'export VISUAL' 'export VISUAL=emacs; export EDITOR="$VISUAL"'
+
+# TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
+# TODO maybe indicate/warn if this file was "updated" or "overwritten"
+cp $DIR/.screenrc ~/.screenrc
+# Starting screen automatically on login
+update_profile_file 'screen -R' 'if [ -z "$JHLP_NO_AUTOLOAD_SCREEN" ] && [ -z "$STY" ]; then screen -R; fi'
+
+# Close Bash sessions after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity but do not apply it for screen sessions as we prefer to detach them via "idle" in .screenrc. TODO confirm that having an open editor like Emacs doesn't count as inactivity inside a screen session our without it.
+update_profile_file '^BASH_IDLE_SESSION_TIMEOUT=' 'BASH_IDLE_SESSION_TIMEOUT=300'
+update_profile_file 'unset TMOUT' 'if [ -z "$JHLP_DISABLE_BASH_IDLE_SESSION_TIMEOUT" ] && [ -z "$STY" ]; then TMOUT=$BASH_IDLE_SESSION_TIMEOUT; else unset TMOUT; fi'
+
+update_bashrc 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
+# About the "DUMMY" value, see https://superuser.com/questions/1446920/setting-bash-history-sizes-to-1-clears-the-history.
+update_bashrc 'HISTSIZE=' "HISTSIZE='DUMMY'"
+update_bashrc 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
 
 #######
 # Updating authorized SSH keys
 #######
 mkdir -p ~/.ssh/
 # TODO check: maybe we should append instead of fully replace?.
+# TODO maybe indicate/warn if authorized_keys was "updated" or "overwritten"
 cp $DIR/authorized_keys ~/.ssh/authorized_keys
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/authorized_keys
-# TODO indicate if authorized_keys was "updated" or "overwritten"
-echo "SSH authorized keys updated"
-
-# TODO try to reuse to this function for updating other files like ~/.bashrc.
-# TODO check if Augeas can be used for the following purpose.
-function update_profile_file() {
-    deletion_pattern="/$1/d"
-    updated_line=$2
-    [ -f ~/.bash_profile ] && sed -i "${deletion_pattern}" ~/.bash_profile
-    [ -f ~/.profile ] && sed -i "${deletion_pattern}" ~/.profile
-    FILE=~/.bash_profile
-    if [ ! -f "$FILE" ]; then
-        FILE=~/.profile
-    fi
-    echo ${updated_line} >> $FILE
-}
-
-######
-# Updating preferred editor
-######
-# TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc.
-update_profile_file 'export VISUAL' 'export VISUAL=emacs; export EDITOR="$VISUAL"'
-echo "preferred editor is now emacs"
-
-######
-# Bash and screen configuration
-######
-# TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
-cp $DIR/.screenrc ~/.screenrc
-# TODO indicate if this file was "updated" or "overwritten"
-echo "~/.screenrc updated"
-# Starting screen automatically on login
-update_profile_file 'screen -R' 'if [ -z "$JHLP_NO_AUTOLOAD_SCREEN" ] && [ -z "$STY" ]; then screen -R; fi'
-echo "screen configured to be automatically executed on login"
-# Close Bash sessions after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity but do not apply it for screen sessions as we prefer to detach them via "idle" in .screenrc. TODO confirm that having an open editor like Emacs doesn't count as inactivity inside a screen session our without it.
-update_profile_file '^BASH_IDLE_SESSION_TIMEOUT=' 'BASH_IDLE_SESSION_TIMEOUT=300'
-update_profile_file 'unset TMOUT' 'if [ -z "$JHLP_DISABLE_BASH_IDLE_SESSION_TIMEOUT" ] && [ -z "$STY" ]; then TMOUT=$BASH_IDLE_SESSION_TIMEOUT; else unset TMOUT; fi'
 
 ####
 # Git configuration
 ####
 git config --global user.name "Jaime Hablutzel"
 git config --global user.email "hablutzel1@gmail.com"
-echo "Git user.name and user.email configured"
 
 # TODO maybe link the full 'hooks' directory instead of each hook.
+# Git hook to execute this script automatically when pulling changes.
 ln -sf $DIR/git_hooks/post-merge $DIR/.git/hooks/post-merge
-echo "Installed Git hook to execute this script automatically when pulling changes"
 
 ####
 # User crontab configuration
@@ -86,4 +85,5 @@ echo >> $tmpcronfile
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
 crontab $tmpcronfile
 rm -f $tmpcronfile
-echo "crontab installed to pull changes for this repo every 5 minutes"
+
+echo "Jaime Hablutzel's configuration applied."

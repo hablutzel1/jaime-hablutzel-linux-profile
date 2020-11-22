@@ -3,6 +3,8 @@
 ###########################
 # General
 ###########################
+# TODO provide a 'reset_bash_initialization_files' function that leaves ~/.bash* only with the configuration managed by this project. This reset could possibly be performed by simply deleting several of these files and then recreating them. Just let .old backups for the originals. Considering that there might already be customizations in these files required for specific systems, the safest bet is to not perform this reset automatically.
+
 urlencode() { python -c "import urllib; print urllib.quote('''$1''', '')"; }
 
 # To allow to visually differentiate STDOUT from STDERR
