@@ -4,6 +4,7 @@
 function remove_matching_line() {
     [ -f "$1" ] && sed -i "/$2/d" $1
 }
+# TODO evaluate not to remove previous matches in standard files as this could lead to syntax errors, e.g. if we match the whole content of an "if" clause, the following would delete its content producing a syntax problem. Prefer to perform the appropriate configuration overrides only from my own dedicated files, e.g. .bashrc_jh or .bash_profile_jh.
 function remove_all_matches() {
     remove_matching_line ~/.bashrc "$1"
     remove_matching_line ~/.bash_profile "$1"
@@ -25,7 +26,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # TODO try to keep all shell configuration edits in blocks to make it easier to visually identify the configurations being managed from here or even better use dedicated files files and just source them, i.e. .bashrc_jh .bash_profile_jh. See https://superuser.com/a/224204/89031. Check if this might be somehow related too https://github.com/AlbanAndrieu/ansible-shell/blob/master/templates/.bashrc.j2.
 ######
 # TODO look for the way to prevent sourcing .bashrc if it has been already sourced with the code in the default .bash_profile.
-update_profile_file 'source "${HOME}\/.bashrc"' 'source "${HOME}/.bashrc"'
+update_profile_file '^source "${HOME}\/.bashrc"' 'source "${HOME}/.bashrc"'
 
 # Updating aliases. It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use .bash_aliases_jh just to keep it agnostic from every different distribution.
 cp $DIR/.bash_aliases_jh ~/.bash_aliases_jh
@@ -52,6 +53,7 @@ update_bashrc 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
 # About the "DUMMY" value, see https://superuser.com/questions/1446920/setting-bash-history-sizes-to-1-clears-the-history.
 update_bashrc 'HISTSIZE=' "HISTSIZE='DUMMY'"
 update_bashrc 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
+# TODO when creating .bashrc_jh, evaluate to allow my customizations to run only once by using a variable like $JHLP_BASHRC_LOADED, but maybe there is no real problem with allowing my .bashrc configurations to load several times.
 
 #######
 # Updating authorized SSH keys
