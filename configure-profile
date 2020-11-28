@@ -55,6 +55,8 @@ update_bashrc 'HISTSIZE=' "HISTSIZE='DUMMY'"
 update_bashrc 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
 # TODO when creating .bashrc_jh, evaluate to allow my customizations to run only once by using a variable like $JHLP_BASHRC_LOADED, but maybe there is no real problem with allowing my .bashrc configurations to load several times.
 
+stty -ixon
+
 #######
 # Updating authorized SSH keys
 #######
