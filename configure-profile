@@ -36,7 +36,7 @@ test -s ~/.bash_aliases && echo "WARNING: .bash_aliases already exists. Check if
 test -s ~/.alias && echo "WARNING: .alias already exists. Check if there are old definitions to delete there."
 
 # Updating preferred editor
-# TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc.
+# TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc. See https://unix.stackexchange.com/a/129144/11564.
 update_profile_file 'export VISUAL' 'export VISUAL=emacs; export EDITOR="$VISUAL"'
 
 # TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
