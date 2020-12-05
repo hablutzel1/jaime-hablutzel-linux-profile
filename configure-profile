@@ -38,6 +38,7 @@ test -s ~/.alias && echo "WARNING: .alias already exists. Check if there are old
 # Updating preferred editor
 # TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc. See https://unix.stackexchange.com/a/129144/11564.
 update_profile_file 'export VISUAL' 'export VISUAL=emacs; export EDITOR="$VISUAL"'
+# TODO configure emacs to not save backups in the same location of the original file as I really don't like it!. But note that saving backups elsewhere could be a security risk because of the possibility that it would inadvertently leave sensitive information lying around.
 
 # TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
 # TODO maybe indicate/warn if this file was "updated" or "overwritten"
