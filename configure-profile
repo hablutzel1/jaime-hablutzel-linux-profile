@@ -58,6 +58,8 @@ update_bashrc 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
 
 update_bashrc "stty -ixon" "stty -ixon"
 
+update_bashrc "^umask" "umask 027"
+
 #######
 # Updating authorized SSH keys
 #######
