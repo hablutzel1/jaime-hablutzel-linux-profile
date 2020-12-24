@@ -26,13 +26,12 @@ fi
 }
 
 mine () {
-# FIXME consider OSes where the default group is not the user itself.
 # TODO check if it works if we are the "root" user itself.
 if [ -z "$SUDO_USER" ]; then
   # TODO check if sudo is always required here, e.g. could it be avoided if the current user owns the current directory?.
-  sudo chown -R $USER:$USER .
+  sudo chown -R $USER .
 else
-  chown -R $SUDO_USER:$SUDO_USER .
+  chown -R $SUDO_USER .
 fi
 }
 
