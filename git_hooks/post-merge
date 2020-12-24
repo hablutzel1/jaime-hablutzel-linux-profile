@@ -2,7 +2,11 @@
 # Not sourcing it here to avoid confusion as that 'sourcing' won't affect parent shell (if any) state.
 bash configure-profile
 
-# TODO consider that it is cron the one that will be executing this hook script most of the time, so a method to warn a user (or apply the changes immediately for him) when he returns to the screen session should be found, maybe something like the MOTD or similar that is displayed to the screen sessions on reattaching or even better check if there is any way to trigger an alert for all connected screen sessions so the connected users can get to know immediately that cron has pulled new changes.
+# TODO consider that it is cron the one that will be executing this hook script most of the time, so a method to warn a user when he returns to the screen session should be found or even better, to apply the changes immediately for him in all opened screen windows. Possible options:
+# - Something like the MOTD could be evaluated if it is not global for the whole server.
+# - Something that allows to execute a command on reattaching to the screen sessions or when switching screen sessions.
+# - Something that allows to trigger an alert for all connected screen windows (e.g. message broadcasting?) so the connected users can get to know immediately that cron has pulled new changes.
+# Now, for the implementation, one option might be to set an environment variable with the current jaime-hablutzel-linux-profile version/timestamp and then execute a command to compare this environment variable against the version of the latest pulled one.
 echo
 echo "*************************"
 echo "IMPORTANT: It is required to log in again to apply the profile changes"
