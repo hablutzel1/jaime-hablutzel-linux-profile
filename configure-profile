@@ -47,7 +47,7 @@ cp $DIR/.screenrc ~/.screenrc
 # Starting screen automatically on login
 update_profile_file 'screen -R' 'if [ -z "$JHLP_NO_AUTOLOAD_SCREEN" ] && [ -z "$STY" ]; then screen -R; fi'
 
-# Close Bash sessions after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity but do not apply it for screen sessions as we prefer to detach them via "idle" in .screenrc. TODO confirm that having an open editor like Emacs doesn't count as inactivity inside a screen session our without it.
+# Close Bash sessions after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity but do not apply it for screen sessions as we prefer to detach them via "idle" in .screenrc. TODO confirm that having an open editor like Emacs doesn't count as inactivity inside a screen session our without it. Check: maybe the current protection doesn't make sense anymore in my workflow as I'm managing screen locking at the workstation level, e.g. the blobfish-58 MBP.
 update_profile_file '^BASH_IDLE_SESSION_TIMEOUT=' 'BASH_IDLE_SESSION_TIMEOUT=300'
 update_profile_file 'unset TMOUT' 'if [ -z "$JHLP_DISABLE_BASH_IDLE_SESSION_TIMEOUT" ] && [ -z "$STY" ]; then TMOUT=$BASH_IDLE_SESSION_TIMEOUT; else unset TMOUT; fi'
 
