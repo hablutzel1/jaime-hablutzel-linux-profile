@@ -2,7 +2,7 @@
 
 # TODO check if Augeas can be used for the following purpose as it apparently could preserve formatting and location of edit. See https://stackoverflow.com/a/50323373/320594.
 function remove_matching_line() {
-    [ -f "$1" ] && sed -i "/$2/d" $1
+    [ -f "$1" ] && sed -i '' -e "/$2/d" $1
 }
 # TODO evaluate not to remove previous matches in standard files as this could lead to syntax errors, e.g. if we match the whole content of an "if" clause, the following would delete its content producing a syntax problem. Prefer to perform the appropriate configuration overrides only from my own dedicated files, e.g. .bashrc_jh or .bash_profile_jh (but in that case perform a final removal of the entries I placed in the defaul shell configuration files, maybe by receiving the patterns in something like a 'old_patterns_to_delete' that removes previous entries only once in which case it will need a marker file or something like that to get sure of performing this only once).
 function remove_all_matches() {
@@ -86,7 +86,7 @@ ln -sf $DIR/git_hooks/post-merge $DIR/.git/hooks/post-merge
 ####
 tmpcronfile=$(mktemp)
 crontab -l >"$tmpcronfile"
-sed -i '/.jaime-hablutzel-linux-profile/d' $tmpcronfile
+sed -i '' -e '/.jaime-hablutzel-linux-profile/d' $tmpcronfile
 # TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
 echo >> $tmpcronfile
 # TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
