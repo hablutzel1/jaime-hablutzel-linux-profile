@@ -67,13 +67,6 @@ alias ec="etckeeper commit "
 alias ect="etckeeper commit \"Temporary commit.\""
 
 ###########################
-# SSH
-##########################
-# ssh alias to close connections after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity. Even when this is already configured for the profile, we are overriding 'ssh' to enforce this behavior when connecting to servers where the custom profile is not configured.
-ssh() { /usr/bin/ssh -t "$@" "TMOUT=$BASH_IDLE_SESSION_TIMEOUT bash -l"; }
-alias origssh="/usr/bin/ssh"
-
-###########################
 # screen related
 ##########################
 alias sls="screen -ls"
