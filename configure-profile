@@ -47,6 +47,10 @@ cp $DIR/.screenrc ~/.screenrc
 # Starting screen automatically on login
 update_profile_file 'screen -R' 'if [ -z "$JHLP_NO_AUTOLOAD_SCREEN" ] && [ -z "$STY" ]; then screen -R; fi'
 
+# Removing remnants of: Close Bash sessions after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity.
+remove_all_matches '^BASH_IDLE_SESSION_TIMEOUT='
+remove_all_matches 'unset TMOUT'
+
 update_bashrc 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
 # About the "DUMMY" value, see https://superuser.com/questions/1446920/setting-bash-history-sizes-to-1-clears-the-history.
 update_bashrc 'HISTSIZE=' "HISTSIZE='DUMMY'"
