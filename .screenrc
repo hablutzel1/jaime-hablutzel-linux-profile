@@ -4,5 +4,6 @@ defscrollback 10000
 # TODO research if there could be problems because of the parent shell being loaded as a login shell and each screen session being loaded as a login shell too, e.g. ~/.profile getting confused because it found some values already set.
 defshell -bash
 vbell "off"
+termcapinfo xterm* ti@:te@
 bind n focus next
 bind p focus prev
