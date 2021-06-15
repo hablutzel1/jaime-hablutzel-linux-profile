@@ -34,6 +34,7 @@ else
   chown -R $SUDO_USER .
 fi
 }
+alias la="ls -la"
 
 ###########################
 # iptables/firewall related
