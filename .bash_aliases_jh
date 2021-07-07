@@ -66,6 +66,8 @@ alias gaa="git add -A"
 alias gc="git commit -m "
 alias ec="etckeeper commit "
 alias ect="etckeeper commit \"Temporary commit.\""
+alias etckeeper-pre-commit-disable="sudo mv /etc/.git/hooks/pre-commit /etc/.git/hooks/pre-commit.disabled"
+alias etckeeper-pre-commit-enable="sudo mv /etc/.git/hooks/pre-commit.disabled /etc/.git/hooks/pre-commit"
 
 ###########################
 # screen related
