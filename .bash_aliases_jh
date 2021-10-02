@@ -51,6 +51,7 @@ alias il6='sudo ip6tables -L -n -v --line-numbers'
 # PVE hosts related
 ###########################
 # TODO try to provide the default password too, i.e. 'secret'.
+# TODO check if the following $1 is really working as this technique didn't work for pem_certs being an alias.
 alias console="sudo pct console $1 -escape '^l'"
 
 ###########################
@@ -78,4 +79,4 @@ alias srd="screen -rd"
 ###########################
 # Crypto related
 ###########################
-alias pem_certs="openssl crl2pkcs7 -nocrl -certfile $1 | openssl pkcs7 -print_certs -text"
+pem_certs() { openssl crl2pkcs7 -nocrl -certfile $1 | openssl pkcs7 -print_certs -text; }
