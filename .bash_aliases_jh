@@ -79,4 +79,4 @@ alias srd="screen -rd"
 ###########################
 # Crypto related
 ###########################
-pem_certs() { openssl crl2pkcs7 -nocrl -certfile $1 | openssl pkcs7 -print_certs -text; }
+pemcerts() { openssl crl2pkcs7 -nocrl -certfile $1 | openssl pkcs7 -print_certs -text; }
