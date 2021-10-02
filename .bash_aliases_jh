@@ -74,3 +74,8 @@ alias etckeeper-pre-commit-enable="sudo mv /etc/.git/hooks/pre-commit.disabled /
 ##########################
 alias sls="screen -ls"
 alias srd="screen -rd"
+
+###########################
+# Crypto related
+###########################
+alias pem_certs="openssl crl2pkcs7 -nocrl -certfile $1 | openssl pkcs7 -print_certs -text"
