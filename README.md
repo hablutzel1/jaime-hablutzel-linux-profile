@@ -3,13 +3,13 @@
 Start downloading repo with:
 
 ```
-$ git clone https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git ~/.jaime-hablutzel-linux-profile
+git clone https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git ~/.jaime-hablutzel-linux-profile
 ```
 
 Now, to configure the profile execute:
 
 ```
-$ source ~/.jaime-hablutzel-linux-profile/configure-profile
+source ~/.jaime-hablutzel-linux-profile/configure-profile
 ```
 
 # Options #
