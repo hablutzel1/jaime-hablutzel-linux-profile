@@ -35,3 +35,4 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Explore if GitHub imposes a quota on the number of fetches on a repository (from the same or different locations) because it was observed in `ocsp-1.llamainternal.com` that there were apparently a lot of cron/git/git-remote-http processes opened/frozen at a given time and that triggered the OOM killer.
 * Evaluate to configure my .forward here depending on the username, e.g. for "jaimehabadmin" use jhablutz@wisekey.com and for other usernames default to my personal email.
 * Apparently this type of personal configuration projects are called Dotfiles (https://github.com/ajmalsiddiqui/dotfiles and https://www.freecodecamp.org/news/dive-into-dotfiles-part-1-e4eb1003cff6/). TODO research more on this practice and into the standard tooling that they use.
+* Confirm if we are following the guidelines of the TLCL book, "Modifying the Environment", "Which Files Should We Modify?".
