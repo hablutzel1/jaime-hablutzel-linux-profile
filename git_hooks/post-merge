@@ -6,6 +6,7 @@ bash configure-profile
 # - Something like the MOTD could be evaluated if it is not global for the whole server.
 # - Something that allows to execute a command on reattaching to the screen sessions or when switching screen sessions.
 # - Something that allows to trigger an alert for all connected screen windows (e.g. message broadcasting?) so the connected users can get to know immediately that cron has pulled new changes.
+# - Maybe this could be made with a modification to the Bash Prompt (PS1) of the existing terminals? Is it possible to modify the prompt for a different terminal?
 # Now, for the implementation, one option might be to set an environment variable with the current jaime-hablutzel-linux-profile version/timestamp and then execute a command to compare this environment variable against the version of the latest pulled one.
 echo
 echo "*************************"

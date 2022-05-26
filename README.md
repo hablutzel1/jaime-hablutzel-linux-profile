@@ -30,7 +30,7 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Evaluate to sign (with a key being held in hardware) every commit made to this repository and configure the automated `git pull` in each server to only accept incoming commits if they are signed with a previously authorized key.
 * Add the origin_ssh remote automatically as I need it from time to time.
 * Support the configuration required to send emails directly from the terminal, e.g. with mailx.
-* Look for the way to root sessions to be prompted in a different color to reflect warning, e.g. all of the following could be painted in red: "root@server01:/etc#".
+* Look for the way to root sessions to be prompted in a different color to reflect warning, e.g. all of the following could be painted in red: "root@server01:/etc#". PS1 should maybe be used for this.
 * Evaluate to put my home folder under version control with etckeeper, with everything but Bash related configuration files excluded by default (see https://serverfault.com/questions/411494/etckeeper-on-custom-directory/411512#comment812342_411512).
 * Explore if GitHub imposes a quota on the number of fetches on a repository (from the same or different locations) because it was observed in `ocsp-1.llamainternal.com` that there were apparently a lot of cron/git/git-remote-http processes opened/frozen at a given time and that triggered the OOM killer.
 * Evaluate to configure my .forward here depending on the username, e.g. for "jaimehabadmin" use jhablutz@wisekey.com and for other usernames default to my personal email.

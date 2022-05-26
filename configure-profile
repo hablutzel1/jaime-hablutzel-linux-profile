@@ -59,7 +59,9 @@ update_bashrc 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
 
 update_bashrc "stty -ixon" "stty -ixon"
 
-update_bashrc "^umask" "umask 027"
+# Removing the umask previously set to 027 as it was observed generating problems (IIRC). See too https://unix.stackexchange.com/questions/781/downsides-of-umask-077/551277#551277.
+# TODO retire the following in a while to allow the umask to be modified selectively on each host.
+remove_all_matches "^umask"
 
 #######
 # Updating authorized SSH keys
