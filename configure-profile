@@ -63,6 +63,9 @@ update_bashrc "stty -ixon" "stty -ixon"
 # TODO retire the following in a while to allow the umask to be modified selectively on each host.
 remove_all_matches "^umask"
 
+# The results of history substitution are not immediately passed to the shell parser.
+update_bashrc "shopt -s histverify" "shopt -s histverify"
+
 #######
 # Updating authorized SSH keys
 #######
