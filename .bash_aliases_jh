@@ -9,21 +9,22 @@ urlencode() { python -c "import urllib; print urllib.quote('''$1''', '')"; }
 
 # To allow to visually differentiate STDOUT from STDERR
 color() { "$@" 2>&1>&3|sed 's,.*,\x1B[31m&\x1B[0m,'>&2; } 3>&1
-# To become root preserving the environment. Note that the HOME env variable is being set to workaround a possible 'Defaults always_set_home' in /etc/sudoers, but it might have security implications (for example, in openSUSE Leap v15.1 the /etc/sudoers says the following: "Prevent environment variables from influencing programs in an unexpected or harmful way (CVE-2005-2959, CVE-2005-4158, CVE-2006-0151)" on top of that line).
-super() { history -a; sudo -Es HOME=$HOME; }
 
-# TODO look if sudo by itself could provide for the following functionality (see https://confluence.blobfish.pe/x/kIdMAw).
-# FIXME something like "sudo cat < file.txt" is having problems, maybe because the piped in content isn't an exact "y"?. 
-# FIXME it has been observed that pressing CTRL + C after "sudo cat file.txt | more" leaves the terminal in an unusable state.
-mysudo () {
-local sudoargs=$@
-read -erp "Shall \"$sudoargs\" be executed with sudo? (y/N): " -i "y"
-if [[ "$REPLY" == [Yy] ]]; then
-command sudo "$@"
-else
-return 1
-fi
+# To become root preserving the environment. Note that the HOME env variable is being set to workaround a possible 'Defaults always_set_home' in /etc/sudoers, but it might have security implications (for example, in openSUSE Leap v15.1 the /etc/sudoers says the following: "Prevent environment variables from influencing programs in an unexpected or harmful way (CVE-2005-2959, CVE-2005-4158, CVE-2006-0151)" on top of that line).
+super() {
+history -a;
+/usr/bin/sudo -Es HOME=$HOME;
 }
+
+# This seems to be the default behavior that I want for sudo. For example, it allows to use my own Emacs settings when doing something like 'sudo emacs file'.
+sudo() {
+# TODO does it work on macOS?
+history -a;
+/usr/bin/sudo -E HOME=$HOME "$@";
+}
+
+# Original sudo.
+alias sudoo='/usr/bin/sudo'
 
 mine () {
 # TODO check if it works if we are the "root" user itself.
