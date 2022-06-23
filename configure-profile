@@ -41,6 +41,10 @@ update_profile_file 'export VISUAL' 'export VISUAL=emacs; export EDITOR="$VISUAL
 # TODO instead of overwritting ~/.emacs, evaluate to just include a file like ~/.emacs_jh from it, so it is still possible to customize Emacs settings in each server.
 cp $DIR/.emacs ~/.emacs
 
+# We use Vim as well.
+# See the TODOS for the similar .emacs.
+cp $DIR/.vimrc ~/.vimrc
+
 # TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
 # TODO maybe indicate/warn if this file was "updated" or "overwritten"
 cp $DIR/.screenrc ~/.screenrc
