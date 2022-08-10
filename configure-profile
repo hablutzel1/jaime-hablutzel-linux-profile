@@ -88,7 +88,10 @@ git config --global user.email "hablutzel1@gmail.com"
 
 # TODO maybe link the full 'hooks' directory instead of each hook.
 # Git hook to execute this script automatically when pulling changes.
-# TODO try to use a relative path for the target to avoid a broken link, e.g. if my username gets modified.
+# TODO try to use a relative path for the target to avoid a broken link, e.g. if my username gets modified. Maybe with something like this:
+# cd $DIR
+# ln -sfn ../../git_hooks/post-merge post-merge
+# Additionally, get sure to fix this for existing installations.
 ln -sf $DIR/git_hooks/post-merge $DIR/.git/hooks/post-merge
 
 ####
