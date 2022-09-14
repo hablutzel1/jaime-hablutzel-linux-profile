@@ -28,6 +28,11 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # TODO look for the way to prevent sourcing .bashrc if it has been already sourced with the code in the default .bash_profile.
 update_profile_file '^source "${HOME}\/.bashrc"' 'source "${HOME}/.bashrc"'
 
+# TODO Look for the way to root sessions to be prompted in a different color to reflect warning, e.g. all the prompt could be painted in red.
+# TODO check why are two backslashes apparently required before $ while it isn't required for the other escapes as \n. Check TLCL on this.
+# TODO try to print the exit code of the previous command while maintaining the previous command exit code in $? in case the user wants to do "echo $?".
+update_bashrc '^PS1=' 'PS1="\u@\h:\w\n\\$ "'
+
 # Updating aliases. It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use .bash_aliases_jh just to keep it agnostic from every different distribution.
 cp $DIR/.bash_aliases_jh ~/.bash_aliases_jh
 . ~/.bash_aliases_jh
