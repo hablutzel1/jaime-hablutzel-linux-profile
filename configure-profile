@@ -93,6 +93,8 @@ chmod 600 ~/.ssh/authorized_keys
 git config --global user.name "Jaime Hablutzel"
 git config --global user.email "hablutzel1@gmail.com"
 
+# TODO evaluate to create a global exclude for .DS_Store files on macOS. See blobfish-72 .gitconfig as reference.
+
 # TODO maybe link the full 'hooks' directory instead of each hook.
 # Git hook to execute this script automatically when pulling changes.
 ln -sf ../../git_hooks/post-merge $DIR/.git/hooks/post-merge
