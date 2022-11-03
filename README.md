@@ -35,3 +35,4 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Configure my .forward defaulting to my personal email, but allowing it to be overridden, maybe with a variable like JHLP_NO_AUTOLOAD_SCREEN.
 * Apparently this type of personal configuration projects are called Dotfiles (https://github.com/ajmalsiddiqui/dotfiles and https://www.freecodecamp.org/news/dive-into-dotfiles-part-1-e4eb1003cff6/). TODO research more on this practice and into the standard tooling that they use.
 * Confirm if we are following the guidelines of the TLCL book, "Modifying the Environment", "Which Files Should We Modify?".
+
