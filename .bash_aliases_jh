@@ -27,6 +27,7 @@ history -a;
 alias sudoo='/usr/bin/sudo'
 
 mine () {
+# TODO prompt for confirmation if I'm outside my home folder.
 # TODO check if it works if we are the "root" user itself.
 if [ -z "$SUDO_USER" ]; then
   # TODO check if sudo is always required here, e.g. could it be avoided if the current user owns the current directory?.
