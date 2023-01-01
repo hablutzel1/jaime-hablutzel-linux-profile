@@ -36,3 +36,4 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Apparently this type of personal configuration projects are called Dotfiles (https://github.com/ajmalsiddiqui/dotfiles and https://www.freecodecamp.org/news/dive-into-dotfiles-part-1-e4eb1003cff6/). TODO research more on this practice and into the standard tooling that they use.
 * Confirm if we are following the guidelines of the TLCL book, "Modifying the Environment", "Which Files Should We Modify?".
 * Allow to add host-specific authorized SSH keys. For this purpose a file like ~/.ssh/host_specific_authorized_keys could be used.
+* Try to automatically configure Codex CLI (https://github.com/microsoft/Codex-CLI) in all the hosts where this profile gets configured. Maybe the sensitive credentials could be expected to be provided in the first log in.
