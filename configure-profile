@@ -88,11 +88,12 @@ append_bashrc "shopt -s histverify" "shopt -s histverify"
 # Updating authorized SSH keys
 #######
 mkdir -p ~/.ssh/
-# TODO check: maybe we should append instead of fully replace?.
-# TODO maybe indicate/warn if authorized_keys was "updated" or "overwritten"
-cp $DIR/authorized_keys ~/.ssh/authorized_keys
+cp $DIR/authorized_keys_global ~/.ssh/authorized_keys
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/authorized_keys
+if [ -f ~/.ssh/authorized_keys_host_specific ]; then
+    cat ~/.ssh/authorized_keys_host_specific >> ~/.ssh/authorized_keys
+fi
 
 ####
 # Git configuration
