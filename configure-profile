@@ -129,13 +129,43 @@ ln -sf ../../git_hooks/post-merge $DIR/.git/hooks/post-merge
 ####
 tmpcronfile=$(mktemp)
 crontab -l >"$tmpcronfile"
+sed -i.bak -e '/.codex-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
 sed -i.bak -e '/.jaime-hablutzel-linux-profile/d' $tmpcronfile && rm ${tmpcronfile}.bak
 # TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
 echo >> $tmpcronfile
 # TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
 # TODO instead of supressing STDERR, evaluate to always send it to a Git ignored file under ~/.jaime-hablutzel-linux-profile/ to avoid totally losing possible errors like "fatal: unable to access 'https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git/': The requested URL returned error: 504".
+echo "0 1 * * * cd ~/.codex-cli/ && git pull -q 2>/dev/null" >>$tmpcronfile
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
 crontab $tmpcronfile
 rm -f $tmpcronfile
+
+######
+# Codex CLI configuration
+######
+if [ -d ~/.codex-cli ]; then
+  bash -c 'cd ~/.codex-cli && git pull'
+else
+  git clone https://github.com/microsoft/codex-cli.git ~/.codex-cli
+fi
+
+# TODO check carefully the following warning and remove it: "WARNING: The script openai is installed in '/home/vagrant/.local/bin' which is not on PATH. Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+python3 -m pip install -q --user -r ~/.codex-cli/requirements.txt
+
+if [ ! -f ~/.codex-cli/src/openaiapirc ]; then
+  if is_interactive_shell; then
+    # FIXME provide another way to skip Codex CLI setup instead of suggesting CTRL+C which halts the rest of the execution of this script.
+    echo "Please provide the Codex CLI secret key (or CTRL+C to skip Codex CLI setup):"
+    read -s codex_cli_password
+    # TODO check if exposing my organization ID like this is safe.
+    source ~/.codex-cli/scripts/bash_setup.sh -o org-kjPMSPjdRG1kG4YtjPq6DRzV -k "$codex_cli_password" -e code-davinci-002
+    # TODO evaluate to activate the multi-turn mode by default, but first get sure that it is safe by using it extensively. See https://github.com/microsoft/Codex-CLI/blob/main/README.md#usage.
+  else
+    echo "Not trying to set up Codex CLI as it requires an interactive shell to receive the secret key."
+  fi
+else
+  echo "Codex CLI already configured."
+fi
+
 
 echo "Jaime Hablutzel's configuration applied."
