@@ -24,6 +24,21 @@ function prepend_profile_file() {
     sed -i.bak -e "1s;^;$2\n;" ~/.bash_profile && rm ~/.bash_profile.bak
 }
 
+function is_interactive_shell() {
+  [[ $- == *i* ]]
+}
+
+if is_interactive_shell; then
+  # TODO support other OSses, e.g. macOS with Homebrew.
+  if command -v apt &>/dev/null; then
+    sudo apt update -qq
+    # TODO make the following less verbose carefully.
+    sudo apt install -qqq -y screen cron python3-pip emacs-nox vim
+  fi
+else
+  echo "Not an interactive terminal. Not installing required software."
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 ######
