@@ -158,7 +158,7 @@ if [ ! -f ~/.codex-cli/src/openaiapirc ]; then
     echo "Please provide the Codex CLI secret key (or CTRL+C to skip Codex CLI setup):"
     read -s codex_cli_password
     # TODO check if exposing my organization ID like this is safe.
-    # FIXME after it is ran eventually the current shell closes suddenly. Check the exact reason.
+    # FIXME after it is ran, triggering path completion with TAB makes the current shell suddenly close.
     source ~/.codex-cli/scripts/bash_setup.sh -o org-kjPMSPjdRG1kG4YtjPq6DRzV -k "$codex_cli_password" -e code-davinci-002
     # TODO evaluate to activate the multi-turn mode by default, but first get sure that it is safe by using it extensively. See https://github.com/microsoft/Codex-CLI/blob/main/README.md#usage.
   else
