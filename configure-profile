@@ -145,14 +145,22 @@ rm -f $tmpcronfile
 ######
 # Codex CLI configuration
 ######
+function clone_codex_cli() {
+  git clone https://github.com/AntonOsika/CLI-Co-Pilot.git ~/.codex-cli
+  # Not fully trusting this fork so we are checking out a specific commit.
+  bash -c 'cd ~/.codex-cli && git reset --hard 047d034873e62310e07ff50a3cbb72c1b6eb230b || rm -rf ~/.codex-cli'
+}
 if [ -d ~/.codex-cli ]; then
   # TODO re-enable the auto-pull after having an stable and trusted version of Codex CLI available.
   # bash -c 'cd ~/.codex-cli && git pull'
-  :
+  current_remote="$(git -C ~/.codex-cli config --get remote.origin.url)"
+  outdated_remote="https://github.com/microsoft/Codex-CLI.git"
+  if [[ "${current_remote,,}" == "${outdated_remote,,}" ]]; then
+    rm -rf ~/.codex-cli
+    clone_codex_cli
+  fi
 else
-  git clone https://github.com/AntonOsika/CLI-Co-Pilot.git ~/.codex-cli
-  # Not fully trusting this fork so we are checking out a specific commit.
-  bash -c 'cd ~/.codex-cli && git reset --hard 047d034873e62310e07ff50a3cbb72c1b6eb230b'
+  clone_codex_cli
 fi
 
 # TODO check carefully the following warning and remove it: "WARNING: The script openai is installed in '/home/vagrant/.local/bin' which is not on PATH. Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
