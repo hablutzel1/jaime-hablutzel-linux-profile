@@ -131,7 +131,7 @@ ln -sf ../../git_hooks/post-merge $DIR/.git/hooks/post-merge
 ####
 tmpcronfile=$(mktemp)
 crontab -l >"$tmpcronfile"
-#sed -i.bak -e '/.codex-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
+sed -i.bak -e '/.codex-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
 sed -i.bak -e '/.jaime-hablutzel-linux-profile/d' $tmpcronfile && rm ${tmpcronfile}.bak
 # TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
 echo >> $tmpcronfile
