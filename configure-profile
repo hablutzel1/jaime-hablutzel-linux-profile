@@ -30,10 +30,12 @@ function is_interactive_shell() {
 
 if is_interactive_shell; then
   # TODO support other OSses, e.g. macOS with Homebrew.
-  if command -v apt &>/dev/null; then
-    sudo apt update -qq
-    # TODO make the following less verbose carefully.
-    sudo apt install -qqq -y screen cron python3-pip emacs-nox vim curl
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if command -v apt &>/dev/null; then
+      sudo apt update -qq
+      # TODO make the following less verbose carefully.
+      sudo apt install -qqq -y screen cron python3-pip emacs-nox vim curl
+    fi
   fi
 else
   echo "Not an interactive terminal. Not installing required software."
@@ -129,13 +131,13 @@ ln -sf ../../git_hooks/post-merge $DIR/.git/hooks/post-merge
 ####
 tmpcronfile=$(mktemp)
 crontab -l >"$tmpcronfile"
-sed -i.bak -e '/.codex-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
+#sed -i.bak -e '/.codex-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
 sed -i.bak -e '/.jaime-hablutzel-linux-profile/d' $tmpcronfile && rm ${tmpcronfile}.bak
 # TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
 echo >> $tmpcronfile
 # TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
 # TODO instead of supressing STDERR, evaluate to always send it to a Git ignored file under ~/.jaime-hablutzel-linux-profile/ to avoid totally losing possible errors like "fatal: unable to access 'https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git/': The requested URL returned error: 504".
-echo "0 1 * * * cd ~/.codex-cli/ && git pull -q 2>/dev/null" >>$tmpcronfile
+#echo "0 1 * * * cd ~/.codex-cli/ && git pull -q 2>/dev/null" >>$tmpcronfile
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
 crontab $tmpcronfile
 rm -f $tmpcronfile
@@ -144,9 +146,13 @@ rm -f $tmpcronfile
 # Codex CLI configuration
 ######
 if [ -d ~/.codex-cli ]; then
-  bash -c 'cd ~/.codex-cli && git pull'
+  # TODO re-enable the auto-pull after having an stable and trusted version of Codex CLI available.
+  # bash -c 'cd ~/.codex-cli && git pull'
+  :
 else
-  git clone https://github.com/microsoft/codex-cli.git ~/.codex-cli
+  git clone https://github.com/AntonOsika/CLI-Co-Pilot.git ~/.codex-cli
+  # Not fully trusting this fork so we are checking out a specific commit.
+  bash -c 'cd ~/.codex-cli && git reset --hard 047d034873e62310e07ff50a3cbb72c1b6eb230b'
 fi
 
 # TODO check carefully the following warning and remove it: "WARNING: The script openai is installed in '/home/vagrant/.local/bin' which is not on PATH. Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
@@ -159,7 +165,7 @@ if [ ! -f ~/.codex-cli/src/openaiapirc ]; then
     read -s codex_cli_password
     # TODO check if exposing my organization ID like this is safe.
     # FIXME after it is ran, triggering path completion with TAB makes the current shell suddenly close.
-    source ~/.codex-cli/scripts/bash_setup.sh -o org-kjPMSPjdRG1kG4YtjPq6DRzV -k "$codex_cli_password" -e code-davinci-002
+    source ~/.codex-cli/scripts/bash_setup.sh -o org-kjPMSPjdRG1kG4YtjPq6DRzV -k "$codex_cli_password" -e gpt-3.5-turbo
     # TODO evaluate to activate the multi-turn mode by default, but first get sure that it is safe by using it extensively. See https://github.com/microsoft/Codex-CLI/blob/main/README.md#usage.
   else
     echo "Not trying to set up Codex CLI as it requires an interactive shell to receive the secret key."
