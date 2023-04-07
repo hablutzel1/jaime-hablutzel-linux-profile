@@ -156,7 +156,7 @@ else
 fi
 
 # TODO check carefully the following warning and remove it: "WARNING: The script openai is installed in '/home/vagrant/.local/bin' which is not on PATH. Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
-python3 -m pip install -q --user -r ~/.codex-cli/requirements.txt
+python3 -m pip install --upgrade -q --user -r ~/.codex-cli/requirements.txt
 
 if [ ! -f ~/.codex-cli/src/openaiapirc ]; then
   if is_interactive_shell; then
