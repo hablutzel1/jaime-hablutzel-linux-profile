@@ -137,7 +137,7 @@ sed -i.bak -e '/.jaime-hablutzel-linux-profile/d' $tmpcronfile && rm ${tmpcronfi
 echo >> $tmpcronfile
 # TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
 # TODO instead of supressing STDERR, evaluate to always send it to a Git ignored file under ~/.jaime-hablutzel-linux-profile/ to avoid totally losing possible errors like "fatal: unable to access 'https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git/': The requested URL returned error: 504".
-#echo "0 1 * * * cd ~/.codex-cli/ && git pull -q 2>/dev/null" >>$tmpcronfile
+echo "0 1 * * * cd ~/.codex-cli/ && git pull -q 2>/dev/null" >>$tmpcronfile
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
 crontab $tmpcronfile
 rm -f $tmpcronfile
@@ -145,19 +145,18 @@ rm -f $tmpcronfile
 ######
 # Codex CLI configuration
 ######
+codex_cli_repo=https://github.com/Lukas-LLS/Codex-CLI.git
 function clone_codex_cli() {
-  git clone https://github.com/AntonOsika/CLI-Co-Pilot.git ~/.codex-cli
-  # Not fully trusting this fork so we are checking out a specific commit.
-  bash -c 'cd ~/.codex-cli && git reset --hard 047d034873e62310e07ff50a3cbb72c1b6eb230b || rm -rf ~/.codex-cli'
+  git clone $codex_cli_repo ~/.codex-cli
 }
 if [ -d ~/.codex-cli ]; then
-  # TODO re-enable the auto-pull after having an stable and trusted version of Codex CLI available.
-  # bash -c 'cd ~/.codex-cli && git pull'
   current_remote="$(git -C ~/.codex-cli config --get remote.origin.url)"
-  outdated_remote="https://github.com/microsoft/Codex-CLI.git"
-  if [[ "${current_remote,,}" == "${outdated_remote,,}" ]]; then
+  if [[ "${current_remote,,}" != "${codex_cli_repo,,}" ]]; then
+    echo "Removing ~/.codex-cli as it is not the expected repository..."
     rm -rf ~/.codex-cli
     clone_codex_cli
+  else
+    bash -c 'cd ~/.codex-cli && git pull'
   fi
 else
   clone_codex_cli
@@ -169,11 +168,11 @@ python3 -m pip install --upgrade -q --user -r ~/.codex-cli/requirements.txt
 if [ ! -f ~/.codex-cli/src/openaiapirc ]; then
   if is_interactive_shell; then
     # FIXME provide another way to skip Codex CLI setup instead of suggesting CTRL+C which halts the rest of the execution of this script.
-    echo "Please provide the Codex CLI secret key (or CTRL+C to skip Codex CLI setup):"
+    echo "Please provide the OpenAI API key to set up Codex CLI (or CTRL+C to skip Codex CLI setup):"
     read -s codex_cli_password
     # TODO check if exposing my organization ID like this is safe.
     # FIXME after it is ran, triggering path completion with TAB makes the current shell suddenly close.
-    source ~/.codex-cli/scripts/bash_setup.sh -o org-kjPMSPjdRG1kG4YtjPq6DRzV -k "$codex_cli_password" -e gpt-3.5-turbo
+    source ~/.codex-cli/scripts/bash_setup.sh -o org-kjPMSPjdRG1kG4YtjPq6DRzV -k "$codex_cli_password" -m gpt-3.5-turbo
     # TODO evaluate to activate the multi-turn mode by default, but first get sure that it is safe by using it extensively. See https://github.com/microsoft/Codex-CLI/blob/main/README.md#usage.
   else
     echo "Not trying to set up Codex CLI as it requires an interactive shell to receive the secret key."
