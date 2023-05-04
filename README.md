@@ -34,4 +34,4 @@ The following options could be set in the beginning of `~/.bash_profile`:
 * Confirm if we are following the guidelines of the TLCL book, "Modifying the Environment", "Which Files Should We Modify?".
 * Try to automatically configure Codex CLI (https://github.com/microsoft/Codex-CLI) in all the hosts where this profile gets configured. Maybe the sensitive credentials could be expected to be provided in the first log in.
 * Check if it would be possible to merge all Bash history files in some chosen hosts (e.g. the trusted workstations). Maybe by retrieving the Bash history on SSH connection/disconnection and merge it to the client's Bash history.
-* Set a random color for the PS1 prompt to make it easier to visually group the terminals when many of them are opened. Try to keep the random color stable for each host.
+
