@@ -178,7 +178,7 @@ if [ ! -f ~/.codex-cli/src/openaiapirc ]; then
     read -s codex_cli_password
     # TODO check if exposing my organization ID like this is safe.
     # FIXME after it is ran, triggering path completion with TAB makes the current shell suddenly close.
-    source ~/.codex-cli/scripts/bash_setup.sh -o org-kjPMSPjdRG1kG4YtjPq6DRzV -k "$codex_cli_password" -m gpt-3.5-turbo
+    source ~/.codex-cli/scripts/bash_setup.sh -o org-aqgNhbm2hntFWitRersYbz5B -k "$codex_cli_password" -m gpt-3.5-turbo
     # TODO evaluate to activate the multi-turn mode by default, but first get sure that it is safe by using it extensively. See https://github.com/microsoft/Codex-CLI/blob/main/README.md#usage.
   else
     echo "Not trying to set up Codex CLI as it requires an interactive shell to receive the secret key."
