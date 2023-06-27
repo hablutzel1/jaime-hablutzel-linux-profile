@@ -29,12 +29,15 @@ function is_interactive_shell() {
 }
 
 if is_interactive_shell; then
-  # TODO support other OSses, e.g. macOS with Homebrew.
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if command -v apt &>/dev/null; then
       sudo apt update -qq
       # TODO make the following less verbose carefully.
-      sudo apt install -qqq -y screen cron python3-pip emacs-nox vim curl
+      sudo apt install -qqq -y tmux screen cron python3-pip emacs-nox vim curl
+    fi
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    if command -v brew &>/dev/null; then
+      brew install tmux
     fi
   fi
 else
@@ -80,11 +83,12 @@ cp $DIR/.emacs ~/.emacs
 # See the TODOS for the similar .emacs.
 cp $DIR/.vimrc ~/.vimrc
 
+# Multiplexers setup: Starting tmux or screen automatically on login
+append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then tmux new-session -A -s main; fi'
 # TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
 # TODO maybe indicate/warn if this file was "updated" or "overwritten"
 cp $DIR/.screenrc ~/.screenrc
-# Starting screen automatically on login
-append_profile_file 'screen -R' 'if [ -z "$JHLP_NO_AUTOLOAD_SCREEN" ] && [ -z "$STY" ]; then screen -R; fi'
+append_profile_file 'screen -R' 'if [ -n "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then screen -R; fi'
 
 # Removing remnants of: Close Bash sessions after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity.
 remove_all_matches '^BASH_IDLE_SESSION_TIMEOUT='
