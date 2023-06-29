@@ -84,6 +84,7 @@ cp $DIR/.emacs ~/.emacs
 cp $DIR/.vimrc ~/.vimrc
 
 # Multiplexers setup: Starting tmux or screen automatically on login
+cp $DIR/.tmux.conf ~/.tmux.conf
 append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then tmux new-session -A -s main; fi'
 # TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
 # TODO maybe indicate/warn if this file was "updated" or "overwritten"
