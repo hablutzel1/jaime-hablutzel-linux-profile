@@ -38,6 +38,16 @@ fi
 }
 alias la="ls -la"
 
+############################
+# chatGPT-shell-cli
+############################
+alias 'chatgpt'='~/.chatgpt-shell-cli/chatgpt.sh'
+# TODO study GitHub Copilot CLI that apparently allows to store executed commands in the shell history. From `echo $(github-copilot-cli alias -- "$0")`: copilot_gh-assist () { TMPFILE=$(mktemp); trap 'rm -f $TMPFILE' EXIT; if /opt/homebrew/bin/github-copilot-cli gh-assist "$@" --shellout $TMPFILE; then if [ -e "$TMPFILE" ]; then FIXED_CMD=$(cat $TMPFILE); history -s $(history 1 | cut -d' ' -f4-); history -s "$FIXED_CMD"; eval "$FIXED_CMD" else echo "Apologies! Extracting command failed" fi else return 1 fi }; alias 'gh?'='copilot_gh-assist';
+chatgpt-shell-cli_command() {
+~/.chatgpt-shell-cli/chatgpt.sh -p "command:$*"
+}
+alias 'c?'='chatgpt-shell-cli_command'
+
 ###########################
 # iptables/firewall related
 ###########################

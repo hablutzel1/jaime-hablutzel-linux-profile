@@ -33,7 +33,7 @@ if is_interactive_shell; then
     if command -v apt &>/dev/null; then
       sudo apt update -qq
       # TODO make the following less verbose carefully.
-      sudo apt install -qqq -y tmux screen cron python3-pip emacs-nox vim curl
+      sudo apt install -qqq -y tmux screen cron python3-pip emacs-nox vim curl jq
     fi
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     if command -v brew &>/dev/null; then
@@ -179,7 +179,7 @@ python3 -m pip install --upgrade -q --user -r ~/.codex-cli/requirements.txt
 if [ ! -f ~/.codex-cli/src/openaiapirc ]; then
   if is_interactive_shell; then
     # FIXME provide another way to skip Codex CLI setup instead of suggesting CTRL+C which halts the rest of the execution of this script.
-    echo "Please provide the OpenAI API key to set up Codex CLI (or CTRL+C to skip Codex CLI setup):"
+    echo "Please provide the OpenAI API key to set up Codex CLI (or CTRL+C to abort):"
     read -s codex_cli_password
     # TODO check if exposing my organization ID like this is safe.
     # FIXME after it is ran, triggering path completion with TAB makes the current shell suddenly close.
@@ -192,5 +192,30 @@ else
   echo "Codex CLI already configured."
 fi
 
+######
+# chatGPT-shell-cli configuration
+######
+chatgpt_shell_cli_repo=https://github.com/0xacx/chatGPT-shell-cli.git
+if [ -d ~/.chatgpt-shell-cli ]; then
+    bash -c 'cd ~/.chatgpt-shell-cli && git pull'
+else
+  git clone $chatgpt_shell_cli_repo ~/.chatgpt-shell-cli
+fi
+
+# Temporary workaround for https://github.com/0xacx/chatGPT-shell-cli/issues/111. Remove it when the issue is fixed.
+append_profile_file 'export COLUMNS' "export COLUMNS=80"
+
+if [ -z "$OPENAI_KEY" ]; then
+  if is_interactive_shell; then
+    echo "Please provide the OpenAI API key to set up chatGPT-shell-cli (or CTRL+C to abort):"
+    read -s chatgpt_shell_cli_password
+    append_profile_file 'export OPENAI_KEY' "export OPENAI_KEY=$chatgpt_shell_cli_password"
+    export OPENAI_KEY="$chatgpt_shell_cli_password"
+  else
+    echo "Not trying to set up chatGPT-shell-cli as it requires an interactive shell to receive the secret key."
+  fi
+else
+  echo "chatGPT-shell-cli already configured."
+fi
 
 echo "Jaime Hablutzel's configuration applied."
