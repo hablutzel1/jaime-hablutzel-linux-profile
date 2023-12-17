@@ -153,6 +153,19 @@ echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/nul
 crontab $tmpcronfile
 rm -f $tmpcronfile
 
+if is_interactive_shell; then
+    # TODO look for a more precise way to detect that Rsyslog is active in this system.
+    if [ -d /etc/rsyslog.d ]; then
+      sudo tee /etc/rsyslog.d/99-ignore-cron-jobs-for-jhablutzel.conf > /dev/null <<EOF
+# In Debian it has been observed that these logs can be still found in the systemd journal: journalctl -u cron.service
+if \$programname == 'CRON' and \$msg contains '(jhablutzel) CMD (' then {
+stop
+}
+EOF
+      sudo systemctl restart rsyslog
+    fi             
+fi
+
 ######
 # Codex CLI configuration
 ######
