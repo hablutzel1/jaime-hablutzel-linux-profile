@@ -48,6 +48,13 @@ chatgpt-shell-cli_command() {
 }
 alias 'c?'='chatgpt-shell-cli_command'
 
+############################
+# GitHub Copilot in the CLI
+# IMPORTANT: It looks unsafe to use this in a shared host, as it seems to store the API token directly in ~/.config/gh/hosts.yml. In the meantime it can only be used in personal-only workstations. TODO try to restrict the credential to only GitHub Copilot. Maybe it could be done with a token or a custom OAuth App.  
+############################
+gh-copilot_suggest_shell() { gh copilot suggest -t shell "$*"; }
+alias '??'='gh-copilot_suggest_shell'
+
 ###########################
 # iptables/firewall related
 ###########################

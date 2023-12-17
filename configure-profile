@@ -31,9 +31,21 @@ function is_interactive_shell() {
 if is_interactive_shell; then
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if command -v apt &>/dev/null; then
+      curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
       sudo apt update -qq
       # TODO make the following less verbose carefully.
-      sudo apt install -qqq -y tmux screen cron python3-pip emacs-nox vim curl jq
+      sudo apt install -qqq -y tmux screen cron python3-pip emacs-nox vim curl jq gh
+      
+      # TODO look for a more precise way to detect that Rsyslog is active in this system.
+      if [ -d /etc/rsyslog.d ]; then
+        sudo tee /etc/rsyslog.d/99-ignore-cron-jobs-for-jhablutzel.conf > /dev/null <<EOF
+# In Debian it has been observed that these logs can be still found in the systemd journal: journalctl -u cron.service
+if \$programname == 'CRON' and \$msg contains '(jhablutzel) CMD (' then {
+stop
+}
+EOF
+        sudo systemctl restart rsyslog
+      fi
     fi
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     if command -v brew &>/dev/null; then
@@ -41,7 +53,7 @@ if is_interactive_shell; then
     fi
   fi
 else
-  echo "Not an interactive terminal. Not installing required software."
+  echo "Not an interactive terminal. Not performing configuration that requires sudo."
 fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -152,19 +164,6 @@ echo "0 1 * * * cd ~/.codex-cli/ && git pull -q 2>/dev/null" >>$tmpcronfile
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
 crontab $tmpcronfile
 rm -f $tmpcronfile
-
-if is_interactive_shell; then
-    # TODO look for a more precise way to detect that Rsyslog is active in this system.
-    if [ -d /etc/rsyslog.d ]; then
-      sudo tee /etc/rsyslog.d/99-ignore-cron-jobs-for-jhablutzel.conf > /dev/null <<EOF
-# In Debian it has been observed that these logs can be still found in the systemd journal: journalctl -u cron.service
-if \$programname == 'CRON' and \$msg contains '(jhablutzel) CMD (' then {
-stop
-}
-EOF
-      sudo systemctl restart rsyslog
-    fi             
-fi
 
 ######
 # Codex CLI configuration
