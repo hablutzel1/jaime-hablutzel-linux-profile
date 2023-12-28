@@ -5,5 +5,5 @@ bash configure-profile
 # TODO try to apply the changes immediately in all opened tmux panes. Maybe by simply sourcing configure-profile in all panes using `tmux send-keys`? Though it would end up executing configure-profile multiple times, no? Is it safe?
 # TODO in addition to the previous, even if it gets possible to automatically apply the updated configuration to all existing terminals, create an alias, something like `rt` (refresh terminal) that could be used to immediately apply incoming changes instead of waiting for the cron job that updates the project every 5 minutes. This will be useful when the profile configuration is modified in one machine and we want to have the same configuration in another machine immediately.
 # TODO check if it suffices with reopening just tmux instead of the whole terminal.
-# TODO evaluate to use `wall` -g <group> as `write` is sending the message to a single terminal and the message could get lost.
+# TODO evaluate to use `wall -g <group>` as `write` is sending the message to a single terminal and the message could get lost.
 echo "IMPORTANT: Incoming changes for the terminal profile. Fully reopen the terminal just to be sure." | write ${LOGNAME}
