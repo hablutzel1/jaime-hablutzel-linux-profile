@@ -2,15 +2,8 @@
 # Not sourcing it here to avoid confusion as that 'sourcing' won't affect parent shell (if any) state.
 bash configure-profile
 
-# TODO consider that it is cron the one that will be executing this hook script most of the time, so a method to warn a user when he returns to the screen session should be found or even better, to apply the changes immediately for him in all opened screen windows. Possible options:
-# - Something like the MOTD could be evaluated if it is not global for the whole server.
-# - Something that allows to execute a command on reattaching to the screen sessions or when switching screen sessions.
-# - Something that allows to trigger an alert for all connected screen windows (e.g. message broadcasting?) so the connected users can get to know immediately that cron has pulled new changes.
-# - Maybe this could be made with a modification (a simple red asterisk maybe) to the Bash Prompt (PS1) of the existing terminals? Is it possible to modify the prompt for a different terminal?.
-# - Maybe the screen non-exclusive re-attach feature (in combination with Expect if required) could be used to update the Bash Prompt in all existing terminals or even better maybe this could be used to apply the updated configuration right away or if it is not possible to completely apply the updated configuration without reopening the terminals, maybe a Bash Prompt warning could be additionally set.
-# Now, for the implementation, one option might be to set an environment variable with the current jaime-hablutzel-linux-profile version/timestamp and then execute a command to compare this environment variable against the version of the latest pulled one.
+# TODO try to apply the changes immediately in all opened tmux panes. Maybe by simply sourcing configure-profile in all panes using `tmux send-keys`? Though it would end up executing configure-profile multiple times, no? Is it safe?
 # TODO in addition to the previous, even if it gets possible to automatically apply the updated configuration to all existing terminals, create an alias, something like `rt` (refresh terminal) that could be used to immediately apply incoming changes instead of waiting for the cron job that updates the project every 5 minutes. This will be useful when the profile configuration is modified in one machine and we want to have the same configuration in another machine immediately.
-echo
-echo "*************************"
-echo "IMPORTANT: It is required to log in again to apply the profile changes"
-echo "*************************"
+# TODO check if it suffices with reopening just tmux instead of the whole terminal.
+# TODO evaluate to use `wall` -g <group> as `write` is sending the message to a single terminal and the message could get lost.
+echo "IMPORTANT: Incoming changes for the terminal profile. Fully reopen the terminal just to be sure." | write ${LOGNAME}
