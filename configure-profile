@@ -31,10 +31,14 @@ function is_interactive_shell() {
 if is_interactive_shell; then
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if command -v apt &>/dev/null; then
-      curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
       sudo apt update -qq
       # TODO make the following less verbose carefully.
-      sudo apt install -qqq -y tmux screen cron python3-pip emacs-nox vim curl jq gh
+      sudo apt install -qqq -y tmux screen cron python3-pip emacs-nox vim curl jq
+      
+      # curl is required for the following to work, so we installed it before.
+      curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+      sudo apt update -qq
+      sudo apt install -qqq -y gh
       
       # TODO look for a more precise way to detect that Rsyslog is active in this system.
       if [ -d /etc/rsyslog.d ]; then
