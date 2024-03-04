@@ -33,11 +33,12 @@ if is_interactive_shell; then
     if command -v apt &>/dev/null; then
       sudo apt update -qq
       # TODO make the following less verbose carefully.
-      sudo apt install -qqq -y tmux screen cron python3-pip emacs-nox vim curl jq
+      sudo apt install -qqq -y tmux screen cron emacs-nox vim curl jq
       
       # curl is required for the following to work, so we installed it before.
       curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
       sudo apt update -qq
+      # TODO make the `gh` installation optional as it won't be used in all systems. Can we make it depend on an environment variable like `TRUSTED_HOST`? But does gh have a lot of dependencies? Otherwise it might be acceptable to always install it.
       sudo apt install -qqq -y gh
       
       # TODO look for a more precise way to detect that Rsyslog is active in this system.
@@ -162,55 +163,16 @@ ln -sf ../../git_hooks/post-merge $DIR/.git/hooks/post-merge
 ####
 tmpcronfile=$(mktemp)
 crontab -l >"$tmpcronfile"
-sed -i.bak -e '/.codex-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
+sed -i.bak -e '/.chatgpt-shell-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
 sed -i.bak -e '/.jaime-hablutzel-linux-profile/d' $tmpcronfile && rm ${tmpcronfile}.bak
 # TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
 echo >> $tmpcronfile
 # TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
 # TODO instead of supressing STDERR, evaluate to always send it to a Git ignored file under ~/.jaime-hablutzel-linux-profile/ to avoid totally losing possible errors like "fatal: unable to access 'https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git/': The requested URL returned error: 504".
-echo "0 1 * * * cd ~/.codex-cli/ && git pull -q 2>/dev/null" >>$tmpcronfile
+echo "0 1 * * * cd ~/.chatgpt-shell-cli/ && git pull -q 2>/dev/null" >>$tmpcronfile
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
 crontab $tmpcronfile
 rm -f $tmpcronfile
-
-######
-# Codex CLI configuration
-######
-codex_cli_repo=https://github.com/Lukas-LLS/Codex-CLI.git
-function clone_codex_cli() {
-  git clone $codex_cli_repo ~/.codex-cli
-}
-if [ -d ~/.codex-cli ]; then
-  current_remote="$(git -C ~/.codex-cli config --get remote.origin.url)"
-  if [[ "${current_remote,,}" != "${codex_cli_repo,,}" ]]; then
-    echo "Removing ~/.codex-cli as it is not the expected repository..."
-    rm -rf ~/.codex-cli
-    clone_codex_cli
-  else
-    bash -c 'cd ~/.codex-cli && git pull'
-  fi
-else
-  clone_codex_cli
-fi
-
-# TODO check carefully the following warning and remove it: "WARNING: The script openai is installed in '/home/vagrant/.local/bin' which is not on PATH. Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
-python3 -m pip install --upgrade -q --user -r ~/.codex-cli/requirements.txt
-
-if [ ! -f ~/.codex-cli/src/openaiapirc ]; then
-  if is_interactive_shell; then
-    # FIXME provide another way to skip Codex CLI setup instead of suggesting CTRL+C which halts the rest of the execution of this script.
-    echo "Please provide the OpenAI API key to set up Codex CLI (or CTRL+C to abort):"
-    read -s codex_cli_password
-    # TODO check if exposing my organization ID like this is safe.
-    # FIXME after it is ran, triggering path completion with TAB makes the current shell suddenly close.
-    source ~/.codex-cli/scripts/bash_setup.sh -o org-pQWK8sMlmiH9NA4N9sqzlQCZ -k "$codex_cli_password" -m gpt-3.5-turbo
-    # TODO evaluate to activate the multi-turn mode by default, but first get sure that it is safe by using it extensively. See https://github.com/microsoft/Codex-CLI/blob/main/README.md#usage.
-  else
-    echo "Not trying to set up Codex CLI as it requires an interactive shell to receive the secret key."
-  fi
-else
-  echo "Codex CLI already configured."
-fi
 
 ######
 # chatGPT-shell-cli configuration
