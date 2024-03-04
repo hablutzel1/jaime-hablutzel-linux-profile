@@ -128,4 +128,14 @@ alias srd="screen -rd"
 # Crypto related
 ###########################
 osslpemcerts() { openssl crl2pkcs7 -nocrl -certfile "$1" | openssl pkcs7 -print_certs -text; }
-osslpemcert() { openssl x509 -in "$1" -noout -text "${@:2}"; }
+osslpemcert() {
+if [ "$#" -eq 1 ]; then 
+    openssl x509 -in "$1" -noout -text "${@:2}";
+else
+    for cert in "$@"; do
+      echo "> $cert:"
+      openssl x509 -in "$cert" -noout -text;
+      echo
+    done
+fi
+}
