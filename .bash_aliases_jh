@@ -38,7 +38,32 @@ else
   chown -R $SUDO_USER .
 fi
 }
-alias la="ls -la"
+alias la="ls -lat"
+
+#########################
+# Clipboard management
+#########################
+
+c() {    
+    if [[ $(uname) == "Darwin" ]]; then
+        pbcopy
+    else
+        xsel -b
+    fi
+}
+
+p() {
+    if [[ $(uname) == "Darwin" ]]; then
+        pbpaste
+    else
+        xsel -b
+    fi
+}
+
+copyfullpath() {
+    readlink -n -f "$1" | c
+    echo "Copied full path to clipboard."
+}
 
 ############################
 # chatGPT-shell-cli
