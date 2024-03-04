@@ -2,8 +2,9 @@
 # Not sourcing it here to avoid confusion as that 'sourcing' won't affect parent shell (if any) state.
 bash configure-profile
 
-# TODO try to apply the changes immediately in all opened tmux panes. Maybe by simply sourcing configure-profile in all panes using `tmux send-keys`? Though it would end up executing configure-profile multiple times, no? Is it safe?
+# TODO try to apply the changes immediately in all opened tmux panes. Maybe by simply sourcing configure-profile in all panes using `tmux send-keys`? Though it would end up executing configure-profile multiple times, no? Is it safe? Maybe a semaphore/lock could be required to be implemented to prevent unsafe concurrent executions of configure-profile. Anyway, a warning should be still issued (at least to one terminal) as simply sourcing configure-profile isn't currently leaving the shell in a fully updated state, e.g. code like prepend_profile_file 'HISTCONTROL=' 'HISTCONTROL=ignoreboth' which isn't effective right away. 
 # TODO in addition to the previous, even if it gets possible to automatically apply the updated configuration to all existing terminals, create an alias, something like `rt` (refresh terminal) that could be used to immediately apply incoming changes instead of waiting for the cron job that updates the project every 5 minutes. This will be useful when the profile configuration is modified in one machine and we want to have the same configuration in another machine immediately.
 # TODO check if it suffices with reopening just tmux instead of the whole terminal.
 # TODO evaluate to use `wall -g <group>` as `write` is sending the message to a single terminal and the message could get lost.
+# TODO check: maybe use `write` only when tmux is not active for my user, otherwise use `tmux send-keys`. Or maybe the `tmux send-keys` on top of `write`?
 echo "IMPORTANT: Incoming changes for the terminal profile. Fully reopen the terminal just to be sure." | write ${LOGNAME}
