@@ -54,7 +54,7 @@ EOF
     fi
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     if command -v brew &>/dev/null; then
-      brew install tmux
+      brew install tmux jq
     fi
   fi
 else
