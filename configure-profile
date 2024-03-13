@@ -102,7 +102,7 @@ cp $DIR/.vimrc ~/.vimrc
 
 # Less customizations
 # Case-insensitive search by default.
-append_profile_file 'export LESS' 'export LESS="-i"'
+append_profile_file 'export LESS' 'export LESS="-i -R"'
 
 # Multiplexers setup: Starting tmux or screen automatically on login
 cp $DIR/.tmux.conf ~/.tmux.conf
