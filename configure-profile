@@ -165,6 +165,8 @@ tmpcronfile=$(mktemp)
 crontab -l >"$tmpcronfile"
 sed -i.bak -e '/.chatgpt-shell-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
 sed -i.bak -e '/.jaime-hablutzel-linux-profile/d' $tmpcronfile && rm ${tmpcronfile}.bak
+# Keep the following line even though it should be required only once per host as cleanup.
+sed -i.bak -e '/.codex-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
 # TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
 echo >> $tmpcronfile
 # TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
@@ -173,6 +175,14 @@ echo "0 1 * * * cd ~/.chatgpt-shell-cli/ && git pull -q 2>/dev/null" >>$tmpcronf
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
 crontab $tmpcronfile
 rm -f $tmpcronfile
+
+#####
+# Uninstall old Codex CLI configuration
+#####
+if [ -d ~/.codex-cli ]; then
+  source ~/.codex-cli/scripts/bash_cleanup.sh
+  rm -rf ~/.codex-cli
+fi
 
 ######
 # chatGPT-shell-cli configuration
