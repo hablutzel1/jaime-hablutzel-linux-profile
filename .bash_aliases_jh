@@ -70,6 +70,9 @@ copyfullpath() {
     echo "Copied full path to clipboard."
 }
 
+# An iTerm2 Trigger is expected to be set up for the output of this alias.
+alias n='echo processCompletedNotificationForITerm2!'
+
 ############################
 # chatGPT-shell-cli
 ############################
