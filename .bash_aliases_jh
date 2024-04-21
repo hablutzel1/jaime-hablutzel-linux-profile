@@ -38,7 +38,8 @@ else
   chown -R $SUDO_USER .
 fi
 }
-alias la="ls -lat"
+alias la="ls -la"
+alias lat="ls -lat"
 
 # Using autossh by default for automatic reconnections.
 alias ssh="$(which autossh) -M 0"
