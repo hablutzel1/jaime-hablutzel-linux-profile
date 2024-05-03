@@ -38,7 +38,7 @@ if is_interactive_shell; then
       # curl is required for the following to work, so we installed it before.
       curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
       sudo apt update -qq
-      # TODO make the `gh` installation optional as it won't be used in all systems. Can we make it depend on an environment variable like `TRUSTED_HOST`? But does gh have a lot of dependencies? Otherwise it might be acceptable to always install it.
+      # TODO make the `gh` installation optional as it won't be used in all systems. Can we make it depend on an environment variable like `TRUSTED_HOST`? But does gh have a lot of dependencies? Otherwise it might be acceptable to always install it. It requires a GPG configuration and a dedicated repository, so it is not a trivial installation. So try to remove this installation by default. Anyway it won't be used in most places.
       sudo apt install -qqq -y gh
       
       # TODO look for a more precise way to detect that Rsyslog is active in this system.
@@ -71,6 +71,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 append_profile_file '^source "${HOME}\/.bashrc"' 'source "${HOME}/.bashrc"'
 
 # Set the window title to the hostname.
+# FIXME a combination of PROMPT_COMMAND and PS1 is making shell integration not working in the mac. Maybe remove these variables at this level if shell integration can help to configure them better. Anyway, consider support for Termius and iTerm2.
 append_bashrc 'then PROMPT_COMMAND=' 'if [ -n "$TMUX" ]; then PROMPT_COMMAND='"'"'echo -ne "\033Ptmux;\033\033]0;$(hostname -s)\007\033\\"'"'"'; else PROMPT_COMMAND='"'"'echo -ne "\033]0;$(hostname -s)\007"'"'"'; fi' 
 
 # TODO confirm that the colors (including the random ones) for the prompt are really compatible across terminals in different systems: macOS, multiple Linux servers, Linux for Desktop, Termius for iOS and Desktop, etc.

@@ -7,4 +7,5 @@ bash configure-profile
 # TODO check if it suffices with reopening just tmux instead of the whole terminal.
 # TODO evaluate to use `wall -g <group>` as `write` is sending the message to a single terminal and the message could get lost.
 # TODO check: maybe use `write` only when tmux is not active for my user, otherwise use `tmux send-keys`. Or maybe the `tmux send-keys` on top of `write`?
+# TODO check: the following error appears to be always happening when there are incoming changes and a `git pull` is manually performed from the Git repository in Linux "write: effective gid does not match group of /dev/pts/0".
 echo "IMPORTANT: Incoming changes for the terminal profile. Fully reopen the terminal just to be sure." | write ${LOGNAME}
