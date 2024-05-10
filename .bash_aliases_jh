@@ -157,6 +157,22 @@ osslpemcert() {
        done
    fi
 }
+
+# TODO try to refactor for reuse with osslpemcert.
+ossldercert() {
+    if [ "$#" -eq 0 ]; then
+        openssl x509 -inform DER -noout -text
+    elif [ "$#" -eq 1 ]; then 
+        openssl x509 -inform DER -in "$1" -noout -text "${@:2}"
+    else
+        for cert in "$@"; do
+            echo "> $cert:"
+            openssl x509 -inform DER -in "$cert" -noout -text
+            echo
+        done
+    fi
+}
+
 function osslcheckocsp() {
   local domain="$1"
   local port="$2"
