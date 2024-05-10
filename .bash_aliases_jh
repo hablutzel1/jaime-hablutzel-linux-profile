@@ -171,3 +171,6 @@ function osslcheckocsp() {
   openssl ocsp -issuer "$issuer_file" -cert "$cert_file" -no_nonce -url "$ocsp_url" -resp_text
   rm "$cert_file" "$issuer_file"
 }
+function osslpemreq(){
+  openssl req -in "$1" -noout -text
+}
