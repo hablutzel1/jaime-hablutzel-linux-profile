@@ -157,3 +157,17 @@ osslpemcert() {
        done
    fi
 }
+function osslcheckocsp() {
+  local domain="$1"
+  local port="$2"
+  local cert_file=$(mktemp)
+  local issuer_file=$(mktemp)
+  openssl s_client -showcerts -connect "${domain}:${port}" 2>/dev/null </dev/null | openssl x509 -outform PEM > "$cert_file"
+  # TODO manage the case where the AIA CA Issuers is not present.
+  local issuer_url=$(openssl x509 -in "$cert_file" -noout -text | grep -A 1 "Authority Information Access" | tail -n 1 | awk -F 'URI:' '{print $2}')
+  curl -s -o - "$issuer_url" | openssl x509 -inform DER > "$issuer_file"
+  # TODO manage the case where the OCSP URl is not present. Ensure to display a clear error.
+  local ocsp_url=$(openssl x509 -in "$cert_file" -noout -ocsp_uri)
+  openssl ocsp -issuer "$issuer_file" -cert "$cert_file" -no_nonce -url "$ocsp_url" -resp_text
+  rm "$cert_file" "$issuer_file"
+}
