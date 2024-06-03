@@ -144,6 +144,7 @@ osslpemcerts() {
         openssl crl2pkcs7 -nocrl -certfile "$1" | openssl pkcs7 -print_certs -text; 
     fi
 }
+# TODO try to merge osslpemcert and ossldercert into a single function that detects the format automatically.
 osslpemcert() {
    if [ "$#" -eq 0 ]; then
        openssl x509 -noout -text
@@ -171,6 +172,42 @@ ossldercert() {
             echo
         done
     fi
+}
+
+# TODO check if the variables inside, e.g. `cert` or `IFS` affect the outer scope.
+# TODO look if I wrote something similar to this in the past. Intentar ubicar el script o programa que hice para ordenar certs. y compararlos.
+osslpemcertordered() {
+  if [ -z "$1" ]; then
+    cert=$(openssl x509 -text -noout)
+  else
+    cert=$(openssl x509 -in "$1" -text -noout)
+  fi
+  before_extensions=$(echo "$cert" | sed -n '/X509v3 extensions:/q;p')
+  original_extensions=$(echo "$cert" | sed -n -e '/X509v3 extensions:/,/Signature Algorithm:/p' | sed '/Signature Algorithm:/d')
+  # TODO clarify the reason for this forced newline.
+  original_extensions="$original_extensions
+  "
+  after_extensions=$(echo "$cert" | awk '/Signature Algorithm/{a=""} {a=a$0"\n"} END{print a}')
+
+  # FIXME it is duplicating the MS specific extensions from WISeKeyCertifyIDAdvancedGCCA1.cacert.pem. 1.3.6.1.4.1.311.21.10 is being duplicated for the last "ZyTrust TimeStamp Server" TSU certificate as well.
+  IFS=$'\n'
+  declare -A ext_contents_map
+  for ext in $(echo "$original_extensions" | grep -E '^ {12}[A-Za-z0-9]'); do
+    ext_content=$(echo "$original_extensions" | sed -n "/$ext/,/^            [a-zA-Z]/p")
+    if [[ $(echo "$ext_content" | tail -n 1) =~ ^\ {12}[a-zA-Z] ]]; then
+      ext_content=$(echo "$ext_content" | sed '$d')
+    fi
+    ext_contents_map["$(echo "$ext" | sed -e 's/[[:space:]]//g')"]="$ext_content"
+  done
+  sorted_extensions=""
+  for ext in $(echo "${!ext_contents_map[@]}" | tr ' ' '\n' | sort -V); do
+    sorted_extensions="$sorted_extensions${ext_contents_map[$ext]}\n"
+  done
+
+  echo "$before_extensions"
+  echo "        X509v3 extensions:"
+  echo -e "$sorted_extensions"
+  echo "$after_extensions"
 }
 
 function osslcheckocsp() {
