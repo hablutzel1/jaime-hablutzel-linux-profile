@@ -33,7 +33,7 @@ if is_interactive_shell; then
     if command -v apt &>/dev/null; then
       sudo apt update -qq
       # TODO make the following less verbose carefully.
-      sudo apt install -qqq -y tmux screen cron emacs-nox vim curl jq xsel autossh neovim
+      sudo apt install -qqq -y tmux screen cron emacs-nox vim neovim curl jq xsel autossh 
       
       # curl is required for the following to work, so we installed it before.
       curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
@@ -100,9 +100,13 @@ append_profile_file 'export VISUAL' 'export VISUAL=emacs; export EDITOR="$VISUAL
 # TODO instead of overwritting ~/.emacs, evaluate to just include a file like ~/.emacs_jh from it, so it is still possible to customize Emacs settings in each server.
 cp $DIR/.emacs ~/.emacs
 
-# I use Vim as well.
+# Vim.
 # See the TODOS for the similar .emacs.
 cp $DIR/.vimrc ~/.vimrc
+
+# Neovim.
+mkdir -p ~/.config/nvim
+cp $DIR/init.lua ~/.config/nvim/init.lua
 
 # Less customizations
 # Case-insensitive search by default.
