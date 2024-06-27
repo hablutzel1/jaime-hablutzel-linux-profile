@@ -106,7 +106,7 @@ cp $DIR/.vimrc ~/.vimrc
 
 # Neovim.
 mkdir -p ~/.config/nvim
-cp $DIR/init.lua ~/.config/nvim/init.lua
+cp $DIR/init.vim ~/.config/nvim/init.vim
 
 # Less customizations
 # Case-insensitive search by default.
