@@ -26,9 +26,6 @@ history -a;
 history -r;
 }
 
-# Original sudo.
-alias sudoo="$(which sudo)"
-
 mine () {
 # TODO prompt for confirmation if I'm outside my home folder.
 # TODO check if it works if we are the "root" user itself.
@@ -44,8 +41,6 @@ alias lat="ls -lat"
 
 # Using autossh by default for automatic reconnections.
 alias ssh="$(which autossh) -M 0"
-# Original ssh
-alias ssho="$(which ssh)"
 
 #########################
 # Clipboard management
