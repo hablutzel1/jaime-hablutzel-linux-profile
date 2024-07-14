@@ -237,3 +237,18 @@ function osslcheckocsp() {
 function osslreq(){
   openssl req -in "$1" -noout -text
 }
+
+osslretrievesslchain() {
+  local url="$1"
+  local domain port
+  url="${url#*://}"
+  if [[ $url =~ : ]]; then
+    domain="${url%:*}"
+    port="${url##*:}"
+  else
+    domain="$url"
+    port=443
+  fi
+  domain="${domain%%/*}"
+  openssl s_client -showcerts -connect "$domain:$port" < /dev/null | osslpemcerts
+}
