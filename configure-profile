@@ -35,11 +35,13 @@ if is_interactive_shell; then
       # TODO make the following less verbose carefully.
       sudo apt install -qqq -y tmux screen cron emacs-nox vim neovim curl jq xsel autossh 
       
-      # curl is required for the following to work, so we installed it before.
-      curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-      sudo apt update -qq
-      # TODO make the `gh` installation optional as it won't be used in all systems. Can we make it depend on an environment variable like `TRUSTED_HOST`? But does gh have a lot of dependencies? Otherwise it might be acceptable to always install it. It requires a GPG configuration and a dedicated repository, so it is not a trivial installation. So try to remove this installation by default. Anyway it won't be used in most places.
-      sudo apt install -qqq -y gh
+      if [ -n "$JHLP_SETUP_GITHUB_CLI" ]; then
+        # curl is required for the following to work, so we installed it before.
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        sudo apt update -qq
+        # TODO make the `gh` installation optional as it won't be used in all systems. Can we make it depend on an environment variable like `TRUSTED_HOST`? But does gh have a lot of dependencies? Otherwise it might be acceptable to always install it. It requires a GPG configuration and a dedicated repository, so it is not a trivial installation. So try to remove this installation by default. Anyway it won't be used in most places.
+        sudo apt install -qqq -y gh
+      fi
       
       # TODO look for a more precise way to detect that Rsyslog is active in this system.
       if [ -d /etc/rsyslog.d ]; then
@@ -200,6 +202,14 @@ if [ -d ~/.chatgpt-shell-cli ]; then
     bash -c 'cd ~/.chatgpt-shell-cli && git pull'
 else
   git clone $chatgpt_shell_cli_repo ~/.chatgpt-shell-cli
+fi
+
+if [ -n "$JHLP_SETUP_GITHUB_CLI" ]; then
+  if ! gh auth status &>/dev/null; then
+    gh auth login
+  fi
+  # TODO support updating the extension if it is already installed, https://docs.github.com/en/copilot/managing-copilot/configure-personal-settings/installing-github-copilot-in-the-cli#updating-copilot-in-the-cli
+  gh extension install github/gh-copilot
 fi
 
 # Temporary workaround for https://github.com/0xacx/chatGPT-shell-cli/issues/111. Remove it when the issue is fixed.

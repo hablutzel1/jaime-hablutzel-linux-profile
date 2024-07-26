@@ -1,0 +1,10 @@
+{
+	// TODO check if alternatively macOS can be supported as well.
+	"name": "Debian",	
+	"image": "mcr.microsoft.com/devcontainers/base:bullseye",
+
+	"remoteEnv": {		
+		// TODO check if this can be set at the IDE level, as it is not intended to be shared.
+		// "JHLP_SETUP_GITHUB_CLI": "1"
+	}
+}
