@@ -40,7 +40,9 @@ alias la="ls -la"
 alias lat="ls -lat"
 
 # Using autossh by default for automatic reconnections.
-alias ssh="$(which autossh) -M 0"
+if [ -x "$(command -v autossh)" ]; then
+  alias ssh="$(which autossh) -M 0"
+fi
 
 #########################
 # Clipboard management
