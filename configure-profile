@@ -33,15 +33,7 @@ if is_interactive_shell; then
     if command -v apt &>/dev/null; then
       sudo apt update -qq
       # TODO make the following less verbose carefully.
-      sudo apt install -qqq -y tmux screen cron emacs-nox vim neovim curl jq xsel autossh 
-      
-      if [ -n "$JHLP_SETUP_GITHUB_CLI" ]; then
-        # curl is required for the following to work, so we installed it before.
-        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-        sudo apt update -qq
-        # TODO make the `gh` installation optional as it won't be used in all systems. Can we make it depend on an environment variable like `TRUSTED_HOST`? But does gh have a lot of dependencies? Otherwise it might be acceptable to always install it. It requires a GPG configuration and a dedicated repository, so it is not a trivial installation. So try to remove this installation by default. Anyway it won't be used in most places.
-        sudo apt install -qqq -y gh
-      fi
+      sudo apt install -qqq -y cron emacs-nox vim neovim curl jq xsel autossh 
       
       # TODO look for a more precise way to detect that Rsyslog is active in this system.
       if [ -d /etc/rsyslog.d ]; then
@@ -56,7 +48,7 @@ EOF
     fi
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     if command -v brew &>/dev/null; then
-      brew install -q tmux jq autossh neovim
+      brew install -q jq autossh neovim
     fi
   fi
 else
@@ -114,6 +106,25 @@ cp $DIR/init.vim ~/.config/nvim/init.vim
 # Case-insensitive search by default.
 append_profile_file 'export LESS' 'export LESS="-i -R"'
 
+if is_interactive_shell && [ -z "$JHLP_NO_MULTIPLEXER" ] && ( ! command -v tmux &>/dev/null || ! command -v screen &>/dev/null ); then
+  echo "Do you want to set up a multiplexer (tmux or screen)? (y/n)"
+  read -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+      if command -v apt &>/dev/null; then
+        sudo apt install -qqq -y tmux screen
+      fi
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+      if command -v brew &>/dev/null; then
+        brew install -q tmux
+      fi
+    fi
+  else
+    export JHLP_NO_MULTIPLEXER=1
+    append_profile_file 'export JHLP_NO_MULTIPLEXER' 'export JHLP_NO_MULTIPLEXER=1'
+  fi
+fi
 # Multiplexers setup: Starting tmux or screen automatically on login
 cp $DIR/.tmux.conf ~/.tmux.conf
 append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then tmux new-session -A -s main; fi'
@@ -203,29 +214,49 @@ if [ -d ~/.chatgpt-shell-cli ]; then
 else
   git clone $chatgpt_shell_cli_repo ~/.chatgpt-shell-cli
 fi
-
-if [ -n "$JHLP_SETUP_GITHUB_CLI" ]; then
-  if ! gh auth status &>/dev/null; then
-    gh auth login
-  fi
-  # TODO support updating the extension if it is already installed, https://docs.github.com/en/copilot/managing-copilot/configure-personal-settings/installing-github-copilot-in-the-cli#updating-copilot-in-the-cli
-  gh extension install github/gh-copilot
-fi
-
 # Temporary workaround for https://github.com/0xacx/chatGPT-shell-cli/issues/111. Remove it when the issue is fixed.
 append_profile_file 'export COLUMNS' "export COLUMNS=80"
-
-if [ -z "$OPENAI_KEY" ]; then
-  if is_interactive_shell; then
+if is_interactive_shell && [ -z "$JHLP_NO_CHATGPT_SHELL_CLI" ] && [ -z "$OPENAI_KEY" ]; then
+  echo "Do you want to set up chatGPT-shell-cli? (y/n)"
+  read -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Please provide the OpenAI API key to set up chatGPT-shell-cli (or CTRL+C to abort):"
     read -s chatgpt_shell_cli_password
+    export OPENAI_KEY="$chatgpt_shell_cli_password"    
     append_profile_file 'export OPENAI_KEY' "export OPENAI_KEY=$chatgpt_shell_cli_password"
-    export OPENAI_KEY="$chatgpt_shell_cli_password"
   else
-    echo "Not trying to set up chatGPT-shell-cli as it requires an interactive shell to receive the secret key."
+    export JHLP_NO_CHATGPT_SHELL_CLI=1
+    append_profile_file 'export JHLP_NO_CHATGPT_SHELL_CLI' 'export JHLP_NO_CHATGPT_SHELL_CLI=1'
   fi
-else
-  echo "chatGPT-shell-cli already configured."
+fi
+
+######
+# GH CLI setup
+######
+if is_interactive_shell && [ -z "$JHLP_NO_GITHUB_CLI" ]; then
+  if ! gh auth status &>/dev/null; then
+    echo "Do you want to set up GitHub CLI? (y/n)"
+    read -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if command -v apt &>/dev/null; then
+          # curl is required for the following to work, so we installed it before.
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update -qq
+          # TODO make the `gh` installation optional as it won't be used in all systems. Can we make it depend on an environment variable like `TRUSTED_HOST`? But does gh have a lot of dependencies? Otherwise it might be acceptable to always install it. It requires a GPG configuration and a dedicated repository, so it is not a trivial installation. So try to remove this installation by default. Anyway it won't be used in most places.
+          sudo apt install -qqq -y gh
+        fi
+      fi        
+      gh auth login        
+      # TODO support updating the extension if it is already installed, https://docs.github.com/en/copilot/managing-copilot/configure-personal-settings/installing-github-copilot-in-the-cli#updating-copilot-in-the-cli
+      gh extension install github/gh-copilot
+    else
+      export JHLP_NO_GITHUB_CLI=1
+      append_profile_file 'export JHLP_NO_GITHUB_CLI' 'export JHLP_NO_GITHUB_CLI=1'
+    fi
+  fi
 fi
 
 echo "Jaime Hablutzel's configuration applied."

@@ -1,17 +1,12 @@
 {
 	// TODO check if alternatively macOS can be supported as well.
-	"name": "Debian",	
-	"image": "mcr.microsoft.com/devcontainers/base:bullseye",
-    
-"features": {
-    "ghcr.io/devcontainers/features/sshd:1": {
-        "version": "latest"
-    }
-},
-"postAttachCommand": "unset GITHUB_TOKEN;",
-
-"remoteEnv": {		
-		 "JHLP_SETUP_GITHUB_CLI": "1",
-		"JHLP_NO_MULTIPLEXER": "1"
-	}
+	"name": "Debian",
+	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
+	"features": {
+		"ghcr.io/devcontainers/features/sshd:1": {
+			"version": "latest"
+		}
+	},
+	// TODO look for a way to make the Codespace to wait for the following long running command to complete before allowing terminal access to the users, e.g. from VS Code.
+	"postCreateCommand": "./.devcontainer/postCreateCommand.sh"
 }
