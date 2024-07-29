@@ -9,7 +9,7 @@
     }
 },
 
-remoteEnv": {		
+"remoteEnv": {		
 		// TODO check if this can be set at the IDE level, as it is not intended to be shared.
 		// "JHLP_SETUP_GITHUB_CLI": "1"
 	}
