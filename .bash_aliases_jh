@@ -217,7 +217,7 @@ osslcertordered() {
 
 function osslcheckocsp() {
   local domain="$1"
-  local port="$2"
+  local port="${2:-443}"
   local cert_file=$(mktemp)
   local issuer_file=$(mktemp)
   openssl s_client -showcerts -connect "${domain}:${port}" 2>/dev/null </dev/null | openssl x509 -outform PEM > "$cert_file"
