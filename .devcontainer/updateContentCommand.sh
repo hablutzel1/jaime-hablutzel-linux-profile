@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Apparently required to use GitHub CLI in the Dev Container. TODO confirm.
-echo 'unset GITHUB_TOKEN' >> ~/.bashrc
+#echo 'unset GITHUB_TOKEN' >> ~/.bashrc
 
 ####
 # Copilot for Neovim
