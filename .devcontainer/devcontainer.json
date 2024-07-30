@@ -7,6 +7,5 @@
 			"version": "latest"
 		}
 	},
-	// TODO look for a way to make the Codespace to wait for the following long running command to complete before allowing terminal access to the users, e.g. from VS Code.
-	"postCreateCommand": "./.devcontainer/postCreateCommand.sh"
+	"updateContentCommand": "./.devcontainer/updateContentCommand.sh"
 }
