@@ -187,10 +187,27 @@ ossldercert() {
 # TODO write some automated tests for this method because there is compliance risk involved if it malfuctions.
 # TODO ensure it works with certificates without extensions at all (test OpenSSL 1.x and 3.x).
 osslcertordered() {
-  if [ -z "$1" ]; then
-    cert=$(openssl x509 -text -noout)
+  local filenames=()
+  local default_options=(-noout -text)
+  local extra_options=()
+  local match_found=false
+
+  # TODO ensure it plays nice with filenames that contain spaces or the '-' character, so the match for '-' below should always search for a preceding space. Should it look for the start of a word as well?
+  for arg in "$@"; do
+    if [[ "$arg" == -* ]]; then
+      match_found=true
+    fi
+    if ! $match_found; then
+      filenames+=("$arg")
+    else
+      extra_options+=("$arg")
+    fi
+  done
+
+  if [ ${#filenames[@]} -eq 0 ]; then
+    cert=$(openssl x509 "${default_options[@]}" "${extra_options[@]}")
   else
-    cert=$(openssl x509 -in "$1" -text -noout)
+    cert=$(openssl x509 -in "${filenames[0]}" "${default_options[@]}" "${extra_options[@]}")
   fi
   before_extensions=$(echo "$cert" | sed -n '/X509v3 extensions:/q;p')
   original_extensions=$(echo "$cert" | sed -n -e '/X509v3 extensions:/,/Signature Algorithm:/p')
