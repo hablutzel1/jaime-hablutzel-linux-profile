@@ -175,7 +175,22 @@ git config --global user.email "hablutzel1@gmail.com"
 # Recommended value for Unix like systems.
 git config --global core.autocrlf input
 
-# TODO evaluate to create a global exclude for .DS_Store files on macOS. See blobfish-72 .gitconfig as reference.
+git_global_ignore() {
+  local ignore_file="$HOME/.config/git/ignore"
+  local line_to_add="$1"
+
+  if [ -f "$ignore_file" ]; then
+    if ! grep -q "^$line_to_add$" "$ignore_file"; then
+      echo "$line_to_add" >> "$ignore_file"
+    fi
+  else
+    mkdir -p "$(dirname "$ignore_file")"
+    echo "$line_to_add" > "$ignore_file"
+  fi
+}
+git_global_ignore ".DS_Store"
+git_global_ignore ".idea/"
+git_global_ignore "*.iml"
 
 # TODO maybe link the full 'hooks' directory instead of each hook.
 # Git hook to execute this script automatically when pulling changes.
