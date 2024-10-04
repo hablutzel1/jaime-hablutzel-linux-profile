@@ -247,12 +247,34 @@ function osslcheckocsp() {
   rm "$cert_file" "$issuer_file"
 }
 
-# TODO support input from STDIN.
 function osslreq(){
-  if [ "$#" -eq 0 ]; then
-    openssl req -noout -text
+  # TODO try to remove the redundancy with the `osslcert` function.
+  local filenames=()
+  local default_options=(-noout -text)
+  local extra_options=()
+  local match_found=false
+
+  for arg in "$@"; do
+    if [[ "$arg" == -* ]]; then
+      match_found=true
+    fi
+    if ! $match_found; then
+      filenames+=("$arg")
+    else
+      extra_options+=("$arg")
+    fi
+  done
+
+  if [ ${#filenames[@]} -eq 0 ]; then
+    openssl req "${default_options[@]}" "${extra_options[@]}"
+  elif [ ${#filenames[@]} -eq 1 ]; then
+    openssl req -in "${filenames[0]}" "${default_options[@]}" "${extra_options[@]}"
   else
-    openssl req -in "$1" -noout -text
+    for csr in "${filenames[@]}"; do
+      echo "> $csr:"
+      openssl req -in "$csr" "${default_options[@]}" "${extra_options[@]}"
+      echo
+    done
   fi
 }
 
