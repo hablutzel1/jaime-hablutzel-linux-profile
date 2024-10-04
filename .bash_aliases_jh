@@ -134,11 +134,11 @@ alias srd="screen -rd"
 ###########################
 # Crypto related
 ###########################
-osslpemcerts() { 
+osslpemcerts() {
     if [ "$#" -eq 0 ]; then
         openssl crl2pkcs7 -nocrl -certfile /dev/stdin | openssl pkcs7 -print_certs -text;
     else
-        openssl crl2pkcs7 -nocrl -certfile "$1" | openssl pkcs7 -print_certs -text; 
+        openssl crl2pkcs7 -nocrl -certfile "$1" | openssl pkcs7 -print_certs -text;
     fi
 }
 
@@ -249,7 +249,11 @@ function osslcheckocsp() {
 
 # TODO support input from STDIN.
 function osslreq(){
-  openssl req -in "$1" -noout -text
+  if [ "$#" -eq 0 ]; then
+    openssl req -noout -text
+  else
+    openssl req -in "$1" -noout -text
+  fi
 }
 
 osslretrievesslchain() {
