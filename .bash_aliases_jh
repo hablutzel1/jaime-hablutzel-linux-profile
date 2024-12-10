@@ -209,7 +209,14 @@ osslcertordered() {
   if [ ${#filenames[@]} -eq 0 ]; then
     cert=$(openssl x509 "${default_options[@]}" "${extra_options[@]}")
   else
-    cert=$(openssl x509 -in "${filenames[0]}" "${default_options[@]}" "${extra_options[@]}")
+    if [[ "${filenames[0]}" =~ ^https?:// ]]; then
+      temp_file=$(mktemp)
+      wget --quiet --content-disposition -O "$temp_file" "${filenames[0]}"
+      cert=$(openssl x509 -in "$temp_file" "${default_options[@]}" "${extra_options[@]}")
+      rm "$temp_file"
+    else
+      cert=$(openssl x509 -in "${filenames[0]}" "${default_options[@]}" "${extra_options[@]}")
+    fi
   fi
   before_extensions=$(echo "$cert" | sed -n '/X509v3 extensions:/q;p')
   original_extensions=$(echo "$cert" | sed -n -e '/X509v3 extensions:/,/Signature Algorithm:/p')
