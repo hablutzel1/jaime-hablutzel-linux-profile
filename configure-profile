@@ -88,9 +88,6 @@ append_bashrc '\.bash_aliases_jh' "test -s ~/.bash_aliases_jh && . ~/.bash_alias
 test -s ~/.bash_aliases && echo "WARNING: .bash_aliases already exists. Check if there are old definitions to delete there."
 test -s ~/.alias && echo "WARNING: .alias already exists. Manually check if there are old definitions to delete there."
 
-# Updating preferred editor
-# TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc (where these variables might not require to be exported). See https://unix.stackexchange.com/a/129144/11564.
-append_profile_file 'export VISUAL' 'export VISUAL=emacs; export EDITOR="$VISUAL"; export GIT_EDITOR="$VISUAL"'
 # TODO instead of overwritting ~/.emacs, evaluate to just include a file like ~/.emacs_jh from it, so it is still possible to customize Emacs settings in each server.
 cp $DIR/.emacs ~/.emacs
 
@@ -101,6 +98,10 @@ cp $DIR/.vimrc ~/.vimrc
 # Neovim.
 mkdir -p ~/.config/nvim
 cp $DIR/init.vim ~/.config/nvim/init.vim
+
+# Default editor
+# TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc (where these variables might not require to be exported). See https://unix.stackexchange.com/a/129144/11564.
+append_profile_file 'export VISUAL' 'export VISUAL=vim; export EDITOR="$VISUAL"; export GIT_EDITOR="$VISUAL"'
 
 # Less customizations
 # Case-insensitive search by default.
