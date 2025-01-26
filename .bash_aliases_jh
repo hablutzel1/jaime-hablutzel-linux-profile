@@ -122,6 +122,7 @@ alias gaa="git add -A"
 alias gc="git commit -m "
 # TODO check: maybe the following could be replaced by a proper Git alias. See https://stackoverflow.com/a/2419270/320594.
 alias gct="git add -A && git commit -m \"UNREVIEWED: Quick commit.\""
+alias gctp="gct; git push"
 alias ec="etckeeper commit "
 alias ect="etckeeper commit \"UNREVIEWED: Quick commit.\""
 alias etckeeper-pre-commit-disable="sudo mv /etc/.git/hooks/pre-commit /etc/.git/hooks/pre-commit.disabled"
