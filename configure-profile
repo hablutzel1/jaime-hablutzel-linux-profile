@@ -146,16 +146,15 @@ prepend_profile_file 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
 prepend_profile_file 'HISTSIZE=' "HISTSIZE='DUMMY'"
 prepend_profile_file 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
 
-# TODO when creating .bashrc_jh, evaluate to allow my customizations to run only once by using a variable like $JHLP_BASHRC_LOADED, but maybe there is no real problem with allowing my .bashrc configurations to load several times.
-
-append_bashrc "stty -ixon" "stty -ixon"
-
-# Removing the umask previously set to 027 as it was observed generating problems (IIRC). See too https://unix.stackexchange.com/questions/781/downsides-of-umask-077/551277#551277.
-# TODO retire the following in a while to allow the umask to be modified selectively on each host.
-remove_all_matches "^umask"
+# The previous HIST* variables apparently are not enough to guarantee history is never truncated. Now testing the following. See https://git.savannah.gnu.org/cgit/bash.git/tree/bashhist.c?h=bash-5.2#n159
+append_bashrc "shopt -s histappend" "shopt -s histappend"
 
 # The results of history substitution are not immediately passed to the shell parser.
 append_bashrc "shopt -s histverify" "shopt -s histverify"
+
+# TODO when creating .bashrc_jh, evaluate to allow my customizations to run only once by using a variable like $JHLP_BASHRC_LOADED, but maybe there is no real problem with allowing my .bashrc configurations to load several times.
+
+append_bashrc "stty -ixon" "stty -ixon"
 
 #######
 # Updating authorized SSH keys
