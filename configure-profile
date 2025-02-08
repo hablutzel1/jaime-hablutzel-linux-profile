@@ -147,6 +147,7 @@ prepend_profile_file 'HISTSIZE=' "HISTSIZE='DUMMY'"
 prepend_profile_file 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
 
 # The previous HIST* variables apparently are not enough to guarantee history is never truncated. Now testing the following. See https://git.savannah.gnu.org/cgit/bash.git/tree/bashhist.c?h=bash-5.2#n159
+# TODO evaluate to use prepend_profile_file instead as it seems to load before, but ensure this loading is guaranteed.
 append_bashrc "shopt -s histappend" "shopt -s histappend"
 
 # The results of history substitution are not immediately passed to the shell parser.
