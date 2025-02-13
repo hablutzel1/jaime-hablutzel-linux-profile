@@ -212,6 +212,13 @@ echo >> $tmpcronfile
 # TODO instead of supressing STDERR, evaluate to always send it to a Git ignored file under ~/.jaime-hablutzel-linux-profile/ to avoid totally losing possible errors like "fatal: unable to access 'https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git/': The requested URL returned error: 504".
 echo "0 1 * * * cd ~/.chatgpt-shell-cli/ && git pull -q 2>/dev/null" >>$tmpcronfile
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  sed -i.bak -e '/.bash_history_backups/d' $tmpcronfile && rm ${tmpcronfile}.bak
+  random_hour=$((8 + RANDOM % 15))
+  random_minute=$((RANDOM % 60))
+  echo "$random_minute $random_hour * * * cp /Users/jhablutzel/Library/Mobile\ Documents/com~apple~CloudDocs/macos_settings/Users/jhablutzel/.bash_history /Users/jhablutzel/Library/Mobile\ Documents/com~apple~CloudDocs/macos_settings/Users/jhablutzel/.bash_history_backups/\$(date +\%Y-\%m-\%d-\%H-\%M-\%S).bash_history" >> $tmpcronfile
+  echo "NOTE: Ensure to assign Full Disk Access to the 'cron' program to be able to access iCloud Drive for .bash_history backups."
+fi
 crontab $tmpcronfile
 rm -f $tmpcronfile
 
