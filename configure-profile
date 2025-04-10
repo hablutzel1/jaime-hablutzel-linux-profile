@@ -10,23 +10,33 @@ function remove_all_matches() {
     remove_matching_line ~/.bash_profile "$1"
     remove_matching_line ~/.profile "$1"
 }
+function prepend_bashrc() {
+    remove_all_matches "$1"
+    sed -i.bak -e "1s;^;$2\n;" ~/.bashrc && rm ~/.bashrc.bak
+}
+function prepend_bashrc_2() {
+    remove_matching_line ~/.bashrc "$1"
+    sed -i.bak -e "1s;^;$2\n;" ~/.bashrc && rm ~/.bashrc.bak
+}
 function append_bashrc() {
     remove_all_matches "$1"
     echo $2 >> ~/.bashrc
+}
+function prepend_profile_file() {
+    remove_all_matches "$1"
+    sed -i.bak -e "1s;^;$2\n;" ~/.bash_profile && rm ~/.bash_profile.bak
+}
+function prepend_profile_file_2() {
+    remove_matching_line ~/.bash_profile "$1"
+    sed -i.bak -e "1s;^;$2\n;" ~/.bash_profile && rm ~/.bash_profile.bak
 }
 function append_profile_file() {
     remove_all_matches "$1"
     echo $2 >> ~/.bash_profile
 }
-
-function prepend_profile_file() {
-    remove_all_matches "$1"
-    sed -i.bak -e "1s;^;$2\n;" ~/.bash_profile && rm ~/.bash_profile.bak
-}
-
 function prepend_global_profile_file() {
   sudo chmod u+w /etc/profile
-  # TODO try to reuse remove_all_matches
+  # TODO try to reuse remove_all_matches. Or can I reuse remove_matching_line?
   [ -f "/etc/profile" ] && sudo sed -i.bak -e "/$1/d" /etc/profile && sudo rm /etc/profile.bak
   sudo sed -i.bak -e "1s;^;$2\n;" /etc/profile && sudo rm /etc/profile.bak
 }
@@ -147,15 +157,21 @@ append_profile_file 'screen -R' 'if [ -n "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_
 remove_all_matches '^BASH_IDLE_SESSION_TIMEOUT='
 remove_all_matches 'unset TMOUT'
 
+# START OF: Infinite Bash history
+# TODO try to simplify the following around infinite Bash history. Possibly the histappend and edits to /etc/profile are not needed.
 # We are putting the HIST* variables at the beginning of ~/.bash_profile given that it is the first file that is sourced when a new login shell is started and it is important to ensure that these variables are set before anything else, otherwise an error later during initialization could produce unintended history truncation, e.g. it has been observed that if the Bash completion initialization hangs forever (e.g. when Docker is set to a non-available context), if the HIST* variables are not already set, when the terminal is closed, truncation to the default 500 lines occurs for the Bash history file.
-prepend_profile_file 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
+prepend_profile_file_2 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
 # About the "DUMMY" value, see https://superuser.com/questions/1446920/setting-bash-history-sizes-to-1-clears-the-history.
-prepend_profile_file 'HISTSIZE=' "HISTSIZE='DUMMY'"
-prepend_profile_file 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
-
+prepend_profile_file_2 'HISTSIZE=' "HISTSIZE='DUMMY'"
+prepend_profile_file_2 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
 # The previous HIST* variables apparently are not enough to guarantee history is never truncated. Now testing the following. See https://git.savannah.gnu.org/cgit/bash.git/tree/bashhist.c?h=bash-5.2#n159
-# TODO evaluate to use prepend_profile_file instead as it seems to load before, but ensure this loading is guaranteed.
-append_bashrc "shopt -s histappend" "shopt -s histappend"
+prepend_profile_file_2 "shopt -s histappend" "shopt -s histappend"
+
+# The .bashrc configuration has been observed required, otherwise, opening a non-login bash immediately truncates the history.
+prepend_bashrc_2 "HISTCONTROL=" "HISTCONTROL=ignoreboth"
+prepend_bashrc_2 "HISTSIZE=" "HISTSIZE='DUMMY'"
+prepend_bashrc_2 "HISTFILESIZE=" "HISTFILESIZE='DUMMY'"
+prepend_bashrc_2 "shopt -s histappend" "shopt -s histappend"
 
 # Extra effort to configure the Bash history to never truncate by setting the configuration as early as possible. Being done only for macOS as the truncation has been being observed randomly only in this OS.
 # TODO eventually remove the redundancy this is currently introducing.
@@ -165,6 +181,7 @@ if is_interactive_shell && [[ "$OSTYPE" == "darwin"* ]]; then
   prepend_global_profile_file 'HISTSIZE=' "HISTSIZE='DUMMY'"
   prepend_global_profile_file 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
 fi
+# END OF: Infinite Bash history
 
 # The results of history substitution are not immediately passed to the shell parser.
 append_bashrc "shopt -s histverify" "shopt -s histverify"
