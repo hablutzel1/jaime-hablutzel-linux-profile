@@ -145,9 +145,16 @@ osslpemcerts() {
     fi
 }
 
+crt_sh_pem_url_from_sha256() {
+  html_fragment=$(curl -sf https://crt.sh/?q=$1 | grep "Download Certificate: <A href=\"") || return 1
+  query=$(echo "$html_fragment" | sed -n 's/.*href="\([^"]*\)".*/\1/p')
+  echo "https://crt.sh/$query"
+}
+
 # Since OpenSSL 3.0, the input encoding is detected automatically, so the -inform flag is not required anymore. See https://www.openssl.org/docs/man3.0/man1/openssl-format-options.html.
 osslcert() {
   local filenames=()
+  local temp_files=()  
   local default_options=(-noout -text)
   local extra_options=()
   local match_found=false
@@ -158,6 +165,19 @@ osslcert() {
       match_found=true
     fi
     if ! $match_found; then
+      if [[ "$arg" =~ ^[0-9A-Fa-f]{64}$ ]]; then
+        sha256=$arg
+        url=$(crt_sh_pem_url_from_sha256 "$sha256")
+        if [ $? -ne 0 ]; then
+          echo "Warning: Could not find certificate for SHA-256 in crt.sh: $sha256" >&2
+          echo
+          continue
+        fi
+        temp_file=$(mktemp)
+        temp_files+=("$temp_file")
+        wget --quiet --content-disposition -O "$temp_file" "$url"
+        arg="$temp_file"
+      fi
       filenames+=("$arg")
     else
       extra_options+=("$arg")
@@ -175,6 +195,10 @@ osslcert() {
       echo
     done
   fi
+
+  for temp_file in "${temp_files[@]}"; do
+    rm "$temp_file"
+  done
 }
 
 # Encoding enforcing versions.
@@ -189,6 +213,7 @@ ossldercert() {
 # TODO check if I have written something similar in the past. Try to locate the script or program I made for ordering certificates and comparing them.
 # TODO write some automated tests for this method because there is compliance risk involved if it malfuctions.
 # TODO ensure it works with certificates without extensions at all (test OpenSSL 1.x and 3.x).
+# TODO try to reuse `osslcert` instead of invoking `openssl` directly.
 osslcertordered() {
   local filenames=()
   local default_options=(-noout -text)
