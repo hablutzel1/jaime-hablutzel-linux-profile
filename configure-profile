@@ -321,4 +321,18 @@ if is_interactive_shell && [ -z "$JHLP_NO_GITHUB_CLI" ]; then
   fi
 fi
 
+######
+# windsurf.vim
+######
+# TODO compare against https://github.com/Exafunction/windsurf.nvim, which apparently is native to Neovim.
+if is_interactive_shell && [ ! -d ~/.config/nvim/pack/Exafunction/start/windsurf.vim ]; then
+  echo "Do you want to install the windsurf.vim plugin for Neovim? (y/n)"
+  read -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # TODO provide a cron job to update the repository automatically or maybe provide alternative configuration with support for automatic updates by using a plugin manager like lazy.nvim
+    git clone https://github.com/Exafunction/windsurf.vim ~/.config/nvim/pack/Exafunction/start/windsurf.vim
+  fi
+fi
+
 echo "Jaime Hablutzel's configuration applied."
