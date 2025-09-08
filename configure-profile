@@ -116,6 +116,21 @@ cp $DIR/.vimrc ~/.vimrc
 mkdir -p ~/.config/nvim
 cp $DIR/init.vim ~/.config/nvim/init.vim
 
+######
+# windsurf.vim
+######
+# TODO compare against https://github.com/Exafunction/windsurf.nvim, which apparently is native to Neovim.
+if is_interactive_shell && [ ! -d ~/.config/nvim/pack/Exafunction/start/windsurf.vim ]; then
+  echo "Do you want to install the windsurf.vim plugin for Neovim? (y/n)"
+  read -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # TODO instead of cron to keep the repository updated, evaluate an installation alternative with support for automatic updates, e.g. by using a plugin manager like lazy.nvim
+    git clone https://github.com/Exafunction/windsurf.vim ~/.config/nvim/pack/Exafunction/start/windsurf.vim
+    # TODO try to prompt for log in to Windsurf after installing it as in the case of GH CLI.
+  fi
+fi
+
 # Default editor
 # TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc (where these variables might not require to be exported). See https://unix.stackexchange.com/a/129144/11564.
 append_profile_file 'export VISUAL' 'export VISUAL=vim; export EDITOR="$VISUAL"; export GIT_EDITOR="$VISUAL"'
@@ -252,6 +267,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   echo "$random_minute $random_hour * * * cp /Users/jhablutzel/Library/Mobile\ Documents/com~apple~CloudDocs/macos_settings/Users/jhablutzel/.bash_history /Users/jhablutzel/Library/Mobile\ Documents/com~apple~CloudDocs/macos_settings/Users/jhablutzel/.bash_history_backups/\$(date +\%Y-\%m-\%d-\%H-\%M-\%S).bash_history" >> $tmpcronfile
   echo "NOTE: Ensure to assign Full Disk Access to the 'cron' program to be able to access iCloud Drive for .bash_history backups."
 fi
+if [ -d ~/.config/nvim/pack/Exafunction/start/windsurf.vim ]; then
+  sed -i.bak -e '/windsurf.vim/d' $tmpcronfile && rm ${tmpcronfile}.bak
+  echo "0 16 * * * cd ~/.config/nvim/pack/Exafunction/start/windsurf.vim && git pull -q 2>/dev/null" >> $tmpcronfile
+fi
 crontab $tmpcronfile
 rm -f $tmpcronfile
 
@@ -318,20 +337,6 @@ if is_interactive_shell && [ -z "$JHLP_NO_GITHUB_CLI" ]; then
       export JHLP_NO_GITHUB_CLI=1
       append_profile_file 'export JHLP_NO_GITHUB_CLI' 'export JHLP_NO_GITHUB_CLI=1'
     fi
-  fi
-fi
-
-######
-# windsurf.vim
-######
-# TODO compare against https://github.com/Exafunction/windsurf.nvim, which apparently is native to Neovim.
-if is_interactive_shell && [ ! -d ~/.config/nvim/pack/Exafunction/start/windsurf.vim ]; then
-  echo "Do you want to install the windsurf.vim plugin for Neovim? (y/n)"
-  read -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    # TODO provide a cron job to update the repository automatically or maybe provide alternative configuration with support for automatic updates by using a plugin manager like lazy.nvim
-    git clone https://github.com/Exafunction/windsurf.vim ~/.config/nvim/pack/Exafunction/start/windsurf.vim
   fi
 fi
 
