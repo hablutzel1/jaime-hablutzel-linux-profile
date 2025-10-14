@@ -50,13 +50,13 @@ fi
 # Clipboard management
 #########################
 
-c() {    
-    if [[ $(uname) == "Darwin" ]]; then
-        pbcopy
-    else
-        xsel -b
-    fi
-}
+#c() {
+#    if [[ $(uname) == "Darwin" ]]; then
+#        pbcopy
+#    else
+#        xsel -b
+#    fi
+#}
 
 # It is conflicting with Oh My Bash's 'p' alias. Keep it shutdown for now.
 #p() {
