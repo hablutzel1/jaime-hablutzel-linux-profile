@@ -68,7 +68,7 @@ fi
 #}
 
 copyfullpath() {
-    readlink -n -f "$1" | c
+    readlink -n -f "$1" | pbcopy
     echo "Full path copied to clipboard."
 }
 
