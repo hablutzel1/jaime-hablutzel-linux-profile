@@ -127,7 +127,7 @@ if is_interactive_shell && [ ! -d ~/.config/nvim/pack/Exafunction/start/windsurf
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     # TODO instead of cron to keep the repository updated, evaluate an installation alternative with support for automatic updates, e.g. by using a plugin manager like lazy.nvim
     git clone https://github.com/Exafunction/windsurf.vim ~/.config/nvim/pack/Exafunction/start/windsurf.vim
-    # TODO try to prompt for log in to Windsurf after installing it as in the case of GH CLI.
+    # TODO try to prompt for log in to Windsurf immediately after installing it.
   fi
 fi
 
@@ -305,38 +305,6 @@ if is_interactive_shell && [ -z "$JHLP_NO_CHATGPT_SHELL_CLI" ] && [ -z "$OPENAI_
   else
     export JHLP_NO_CHATGPT_SHELL_CLI=1
     append_profile_file 'export JHLP_NO_CHATGPT_SHELL_CLI' 'export JHLP_NO_CHATGPT_SHELL_CLI=1'
-  fi
-fi
-
-######
-# GH CLI setup
-######
-if is_interactive_shell && [ -z "$JHLP_NO_GITHUB_CLI" ]; then
-  if ! gh auth status &>/dev/null; then
-    echo "Do you want to set up GitHub CLI? (y/n)"
-    read -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        if command -v apt &>/dev/null; then
-          # curl is required for the following to work, so we installed it before.
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update -qq
-          # TODO make the `gh` installation optional as it won't be used in all systems. Can we make it depend on an environment variable like `TRUSTED_HOST`? But does gh have a lot of dependencies? Otherwise it might be acceptable to always install it. It requires a GPG configuration and a dedicated repository, so it is not a trivial installation. So try to remove this installation by default. Anyway it won't be used in most places.
-          sudo apt install -qqq -y gh
-        fi      
-      elif [[ "$OSTYPE" == "darwin"* ]]; then
-        if command -v brew &>/dev/null; then
-          brew install -q gh
-        fi
-      fi        
-      gh auth login        
-      # TODO support updating the extension if it is already installed, https://docs.github.com/en/copilot/managing-copilot/configure-personal-settings/installing-github-copilot-in-the-cli#updating-copilot-in-the-cli
-      gh extension install github/gh-copilot
-    else
-      export JHLP_NO_GITHUB_CLI=1
-      append_profile_file 'export JHLP_NO_GITHUB_CLI' 'export JHLP_NO_GITHUB_CLI=1'
-    fi
   fi
 fi
 

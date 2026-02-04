@@ -26,6 +26,5 @@ source ~/.jaime-hablutzel-linux-profile/configure-profile
 * Configure my .forward defaulting to my personal email, but allowing it to be overridden.
 * Apparently this type of personal configuration projects are called Dotfiles (https://github.com/ajmalsiddiqui/dotfiles, https://www.freecodecamp.org/news/dive-into-dotfiles-part-1-e4eb1003cff6/, https://github.com/pawelgrzybek/dotfiles/tree/master). TODO research more on this practice and into the standard tooling that they use.
 * Confirm if we are following the guidelines of the TLCL book, "Modifying the Environment", "Which Files Should We Modify?".
-* Try to automatically configure Codex CLI (https://github.com/microsoft/Codex-CLI) in all the hosts where this profile gets configured. Maybe the sensitive credentials could be expected to be provided in the first log in.
 * Check if it would be possible to merge all Bash history files in some chosen hosts (e.g. the trusted workstations). Maybe by retrieving the Bash history on SSH connection/disconnection and merge it to the client's Bash history.
 
