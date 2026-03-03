@@ -131,6 +131,10 @@ alias srd="screen -rd"
 ###########################
 # Crypto related
 ###########################
+source ~/.bash_aliases_jh_crypto
+
+# TODO gradually migrate all the following functions to ~/.bash_aliases_jh_crypto. Maybe keep some of the current aliases as shortcuts to the new functions.
+
 osslpemcerts() {
     if [ "$#" -eq 0 ]; then
         openssl crl2pkcs7 -nocrl -certfile /dev/stdin | openssl pkcs7 -print_certs -text;

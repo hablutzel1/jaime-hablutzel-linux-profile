@@ -1,0 +1,362 @@
+#!/usr/bin/env bash
+
+__jh_debug() {
+    if [[ "${JH_DEBUG:-0}" == "1" ]]; then
+        # TODO check if possible not to mess with STDERR but use an additional descriptor dedicated for this purpose. Just to avoid conflicts with other possible legit uses of STDERR
+        echo "$1" >&2
+    fi
+}
+
+__jh_temp_files=()
+__jh_ossl_default_opts="-noout -text"
+
+__jh_cleanup() {
+    local temp_file
+    __jh_debug "Cleaning up temporary files..."
+    for temp_file in "${__jh_temp_files[@]}"; do
+        __jh_debug "Cleaning up temporary file: $temp_file"
+        [[ -n "$temp_file" && -f "$temp_file" ]] && rm -f "$temp_file"
+    done
+    __jh_temp_files=()
+}
+
+__jh_process_args() {
+    local arg
+    local -a opts=()
+    local -a args=()
+
+    for arg in "$@"; do
+        if [[ "$arg" == --* ]]; then
+            opts+=("$arg")
+        else
+            args+=("$arg")
+        fi
+    done
+
+    __jh_process_args_result_opts=("${opts[@]}")
+    __jh_process_args_result_args=("${args[@]}")
+}
+
+__jh_process_args_get_option() {
+    local opt_name="$1"
+    local opt_value
+    opt_value="${2:-}"
+    local item    
+    for item in "${__jh_process_args_result_opts[@]}"; do
+        if [[ "$item" == "$opt_name="* ]]; then
+            # Option with value (e.g., --option=value)
+            opt_value="${item#$opt_name=}"
+            break
+        elif [[ "$item" == "$opt_name" ]]; then
+            opt_value="true"
+            break
+        fi
+    done
+    echo "$opt_value"
+}
+
+__jh_crt_sh_pem_url_from_sha256() {
+    local html_fragment
+    local query
+    __jh_debug "About to download from https://crt.sh/?q=$1"
+    html_fragment=$(curl -sf "https://crt.sh/?q=$1" | grep "Download Certificate: <A href=\"") || return 1
+    __jh_debug "HTML fragment with PEM link: $html_fragment"
+    query=$(echo "$html_fragment" | sed -n 's/.*href="\([^"]*\)".*/\1/p')
+    __jh_debug "SHA-256 $1 -> https://crt.sh/$query"
+    echo "https://crt.sh/$query"
+}
+
+__jh_create_temp_file() {
+    local temp_file
+    temp_file=$(mktemp)
+    __jh_temp_files+=("$temp_file")
+    echo "$temp_file"
+}
+
+__jh_download_to_temp() {
+    local url=$1
+    local temp_file
+    temp_file=$(__jh_create_temp_file)
+    __jh_debug "About to download from $url to $temp_file"
+    wget --quiet --content-disposition -O "$temp_file" "$url"
+    __jh_download_to_temp_result="$temp_file"
+}
+
+__jh_source_to_file() {
+    local arg=$1
+    __jh_source_to_file_result=""
+    __jh_source_to_file_name="$arg"
+    if [[ "$arg" == "<STDIN>" ]]; then
+        local temp_file_from_stdin
+        temp_file_from_stdin=$(__jh_create_temp_file)
+        cat > "$temp_file_from_stdin"
+        __jh_source_to_file_result="$temp_file_from_stdin"
+        __jh_source_to_file_name="STDIN"
+    elif [[ "$arg" =~ ^[0-9A-Fa-f]{64}$ ]]; then
+        local url
+        if ! url=$(__jh_crt_sh_pem_url_from_sha256 "$arg"); then
+            echo "Warning: Could not find certificate for SHA-256 in crt.sh: $arg" >&2
+            echo
+            return 1
+        fi
+        # TODO if crt.sh is not available or the SHA-256 is not found there, try to use an alternative site like Censys, Cert Spotter, or others. It's been observed that https://www.certkit.io/tools/ct-logs/certificate?sha256=1b49cf742e964deb1896532945f187cb89c07e0cfc9f4820dd3fb46ab9d32110 works, but it returns a different certificate in some cases, e.g. https://www.certkit.io/tools/ct-logs/certificate?sha256=b4d237c74d2e852e75bd74bbfe8e143ebbcb2130419a8282c089dfb2ab8a518c
+        __jh_download_to_temp "$url"
+        __jh_source_to_file_result="$__jh_download_to_temp_result"
+        __jh_source_to_file_name="$arg (SHA-256 for crt.sh)"
+    elif [[ "$arg" =~ ^https?:// ]]; then
+        __jh_download_to_temp "$arg"
+        # TODO for https:// URLs, if they don't download a crypto object, evaluate to get the certificates from the SSL connection
+        __jh_source_to_file_result="$__jh_download_to_temp_result"
+    elif [[ -f "$arg" ]]; then
+        __jh_source_to_file_result="$arg"
+    else
+        echo "Unsupported source: $arg"
+        return 1
+    fi
+}
+
+__jh_get_type_from_file() {
+    # TODO identify 'csr', 'ocspreq', etc. Default to 'asn1' or to 'unknown'.
+    local num_certs
+    # FIXME if more than one certificate is found, it is marked as 'certchain' and any keys are ignored...
+    num_certs=$(grep -c -- "-----BEGIN CERTIFICATE-----" "$1")
+    if [ "$num_certs" -gt 1 ]; then
+        echo "certchain"
+    elif openssl x509 -in "$1" -noout >/dev/null 2>&1; then
+        echo "cert"
+    elif openssl crl -in "$1" -noout >/dev/null 2>&1; then
+        echo "crl"
+    else
+        echo "unknown"
+    fi
+}
+
+__jh_get_encoding_from_file() {
+    # TODO check if OpenSSL could be used to guarantee valid PEM encoding. I mean, this could be just a text file with some PEM-like headers...
+    if grep -q -- "-----BEGIN.*-----" "$1"; then
+        echo "PEM"
+    else
+        if openssl asn1parse -inform DER -in "$1" >/dev/null 2>&1; then
+            # TODO check if DER is guaranteed here. Or could it be BER or other?
+            echo "binary ASN.1"
+        else
+            echo "other"
+        fi
+    fi
+}
+
+__jh_get_identity_from_cert() {
+    # TODO if there is no CN, get the identity from the first SAN.
+    openssl x509 ${1:+-in "$1"} -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
+}
+
+__jh_cert_to_pem_for_saving() {
+    openssl x509 -issuer -subject
+}
+
+__jh_get_friendly_filename_base() {
+    local identity=$1
+    echo "$identity" | sed 's/[^[:alnum:]]/_/g'
+}
+
+__jh_process_certificates_in_pem_file() {
+    local action=$1
+    local pem_file=$2
+    local ossl_opts=$3
+    local identities
+    identities=()
+    while IFS=$'\t' read -r count b64; do
+        if [ "$action" = "identities" ]; then
+            identities+=("$(echo "$b64" | base64 -d | __jh_get_identity_from_cert)")
+        elif [ "$action" = "print" ]; then
+            echo "  - $count: $(echo "$b64" | base64 -d | __jh_get_identity_from_cert)"
+            echo "$b64" | base64 -d | openssl x509 $ossl_opts | sed 's/^/    /'
+        elif [ "$action" = "save" ]; then
+            local friendly_filename_base
+            # TODO try to remove the redundancy with __jh_process_crypto
+            friendly_filename_base="$(__jh_get_friendly_filename_base "$(echo "$b64" | base64 -d | __jh_get_identity_from_cert)")"
+            local filename
+            filename="${count}_${friendly_filename_base}.crt"
+            echo "$b64" | base64 -d | __jh_cert_to_pem_for_saving > "$filename"
+            echo "  - Saved to ${filename}"
+        fi
+    done < <(awk '
+  /-----BEGIN CERTIFICATE-----/ { in_cert=1; cert=""; next }
+  /-----END CERTIFICATE-----/ {
+    in_cert=0
+    count++
+    printf "%d\t%s\n", count, cert
+    next
+  }
+  in_cert {
+    gsub(/[[:space:]]/, "", $0)   # remove whitespace/newlines
+    cert = cert $0
+  }
+' "$pem_file")
+    if [ "$action" = "identities" ]; then
+        local result
+        for i in "${!identities[@]}"; do
+            result="$result${identities[i]}, "
+        done
+        echo "${result%, }"    
+    fi
+}
+
+__jh_build_pem_following_aia_issuers() {
+    local initial_file=$1
+    local temp_pem_chain
+    temp_pem_chain=$(__jh_create_temp_file)
+    local cur_file="$initial_file"
+    while true; do
+        openssl x509 -in "$cur_file" >>"$temp_pem_chain"
+        cur_aia_ext=$(openssl x509 -in "$cur_file" -noout -ext authorityInfoAccess 2>&1)
+        if [ "$cur_aia_ext" = "No extensions in certificate" ]; then
+            break
+        fi
+        cur_aia_url=$(echo "$cur_aia_ext" | sed -n 's/^[[:space:]]*CA Issuers - URI://p')
+        __jh_download_to_temp "$cur_aia_url"
+        cur_file="$__jh_download_to_temp_result"
+    done
+    echo "$temp_pem_chain"
+}
+
+__jh_get_objects_in_file() {
+    local arg=$1
+    local detected_type
+    detected_type=$(__jh_get_type_from_file "$arg")
+    if [ "$detected_type" = "certchain" ]; then
+        __jh_process_certificates_in_pem_file identities "$arg"
+    elif [ "$detected_type" = "cert" ]; then
+        __jh_get_identity_from_cert "$arg"
+    elif [ "$detected_type" = "crl" ]; then
+        openssl crl -in "$arg" -noout -issuer -nameopt RFC2253 | sed -n 's/^issuer=.*CN=\([^,]*\).*/\1/p'
+    else
+        echo "unknown"
+    fi
+}
+
+__jh_process_crypto_help() {
+    cat << 'EOF'
+Usage: <command> <action> [options] [sources...]
+
+COMMANDS:
+    jh_print_crypto    Display crypto information
+    jh_crypto_to_file  Save crypto objects to files
+
+OPTIONS:
+    --help                      Show this help message
+    --ossl-opts=<options>       OpenSSL options (default: "-noout -text")
+    --override-type=<type>      Force processing as specific type (cert, certchain, crl)
+    --follow-aia-issuers        Follow AIA issuers to build certificate chains
+
+SOURCES:
+    File paths to crypto files (certificates, CRLs, etc.)
+    SHA-256 hashes (64 hex chars) - downloads from crt.sh
+    URLs - downloads from web
+    STDIN - reads from standard input if available
+
+SUPPORTED TYPES:
+    cert        Single X.509 certificate
+    certchain   Certificate chain (multiple certificates)
+    crl         Certificate Revocation List
+
+EXAMPLES:
+    jh_print_crypto certificate.pem
+    jh_crypto_to_file --ossl-opts="-fingerprint -sha256" cert.pem
+    jh_print_crypto --follow-aia-issuers --override-type=cert <sha256>
+    echo "-----BEGIN CERTIFICATE-----..." | jh_print_crypto
+
+EOF
+}
+
+# TODO evaluate to support to download certification chains based on CCADB data.
+__jh_process_crypto() {
+    local action=$1
+    shift    
+    __jh_process_args "$@"
+    local help
+    help="$(__jh_process_args_get_option "--help")"
+    if [ -n "$help" ]; then
+        __jh_process_crypto_help
+        return 0
+    fi
+    
+    local ossl_opts
+    ossl_opts="$(__jh_process_args_get_option "--ossl-opts" "-noout -text")"    
+
+    local override_type
+    override_type="$(__jh_process_args_get_option "--override-type")"
+
+    local sources
+    # Add a source from STDIN, only if available
+    if [ ! -t 0 ]; then
+        # Note "STDIN" is just a label!
+        sources=("<STDIN>")
+    fi
+    # Add sources from positional arguments
+    sources+=("${__jh_process_args_result_args[@]}")    
+
+    for source in "${sources[@]}"; do
+
+        __jh_source_to_file "$source" || continue
+
+        local detected_type
+        detected_type=$(__jh_get_type_from_file "$__jh_source_to_file_result")
+        local effective_type
+        effective_type="$detected_type"
+        local overriden_type_str
+        overriden_type_str=""
+        if [[ -n "$override_type" ]]; then
+            effective_type="$override_type"
+            overriden_type_str=" (overriden type: ${override_type})"
+        fi
+
+        local encoding
+        encoding=$(__jh_get_encoding_from_file "$__jh_source_to_file_result")
+
+        local objects_in_file
+        objects_in_file=$(__jh_get_objects_in_file "$__jh_source_to_file_result")        
+        
+        echo "- Source: $__jh_source_to_file_name, type: $detected_type$overriden_type_str, encoding: $encoding, objects: $objects_in_file"
+
+        local friendly_filename_base
+        if [ "$effective_type" = "certchain" ]; then
+            if [ "$action" = "print" ]; then
+                __jh_process_certificates_in_pem_file print "$__jh_source_to_file_result" "$ossl_opts"
+            elif [ "$action" = "save" ]; then
+                __jh_process_certificates_in_pem_file save "$__jh_source_to_file_result"
+            fi
+        elif [ "$effective_type" = "cert" ]; then
+            local follow_aia_issuers
+            follow_aia_issuers=$(__jh_process_args_get_option "--follow-aia-issuers")
+            if [ "$follow_aia_issuers" = true ]; then
+                __jh_process_certificates_in_pem_file "$action" "$(__jh_build_pem_following_aia_issuers "$__jh_source_to_file_result")" "$ossl_opts"
+            else
+                if [ "$action" = "print" ]; then
+                    cat "$__jh_source_to_file_result" | openssl x509 $ossl_opts | sed 's/^/  /'
+                elif [ "$action" = "save" ]; then
+                    friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
+                    cat "$__jh_source_to_file_result" | __jh_cert_to_pem_for_saving >"$friendly_filename_base.crt"
+                    echo "  Saved to $friendly_filename_base.crt"
+                fi
+            fi
+        elif [ "$effective_type" = "crl" ]; then
+            if [ "$action" = "print" ]; then
+                openssl crl -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
+            elif [ "$action" = "save" ]; then
+                friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
+                openssl crl -in "$__jh_source_to_file_result" -issuer >"$friendly_filename_base.crl"
+                echo "  Saved to $friendly_filename_base.crl"
+            fi
+        fi
+    done
+    __jh_cleanup
+}
+
+jh_print_crypto() {
+    __jh_process_crypto "print" "$@"
+}
+
+jh_crypto_to_file() {
+    __jh_process_crypto "save" "$@"
+}
