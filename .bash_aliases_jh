@@ -151,14 +151,14 @@ osslcert() {
   local temp_files=()  
   local default_options=(-noout -text)
   local extra_options=()
-  local match_found=false
+  local option_match_found=false
   
   # TODO ensure it plays nice with filenames that contain spaces or the '-' character, so the match for '-' below should always search for a preceding space. Should it look for the start of a word as well?
   for arg in "$@"; do
     if [[ "$arg" == -* ]]; then
-      match_found=true
+      option_match_found=true
     fi
-    if ! $match_found; then
+    if ! $option_match_found; then
       if [[ "$arg" =~ ^[0-9A-Fa-f]{64}$ ]]; then
         sha256=$arg
         url=$(crt_sh_pem_url_from_sha256 "$sha256")
@@ -170,6 +170,12 @@ osslcert() {
         temp_file=$(mktemp)
         temp_files+=("$temp_file")
         wget --quiet --content-disposition -O "$temp_file" "$url"
+        arg="$temp_file"
+      # TODO support 'https://'' in osslcertordered and maybe other places.
+      elif [[ "$arg" =~ ^https?:// ]]; then
+        temp_file=$(mktemp)
+        temp_files+=("$temp_file")
+        wget --quiet --content-disposition -O "$temp_file" "$arg"
         arg="$temp_file"
       fi
       filenames+=("$arg")
@@ -212,14 +218,14 @@ osslcertordered() {
   local filenames=()
   local default_options=(-noout -text)
   local extra_options=()
-  local match_found=false
+  local option_match_found=false
 
   # TODO ensure it plays nice with filenames that contain spaces or the '-' character, so the match for '-' below should always search for a preceding space. Should it look for the start of a word as well?
   for arg in "$@"; do
     if [[ "$arg" == -* ]]; then
-      match_found=true
+      option_match_found=true
     fi
-    if ! $match_found; then
+    if ! $option_match_found; then
       filenames+=("$arg")
     else
       extra_options+=("$arg")
