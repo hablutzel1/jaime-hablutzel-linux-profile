@@ -204,7 +204,7 @@ append_bashrc "shopt -s histverify" "shopt -s histverify"
 
 # TODO when creating .bashrc_jh, evaluate to allow my customizations to run only once by using a variable like $JHLP_BASHRC_LOADED, but maybe there is no real problem with allowing my .bashrc configurations to load several times.
 
-append_bashrc "stty -ixon" "stty -ixon"
+append_bashrc "stty -ixon" "[[ -t 0 ]] && stty -ixon"
 
 #######
 # Updating authorized SSH keys
