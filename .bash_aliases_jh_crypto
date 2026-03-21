@@ -55,7 +55,7 @@ __jh_process_args_get_option() {
     echo "$opt_value"
 }
 
-__jh_crt_sh_pem_url_from_sha256() {
+__jh_crt_sh_pem_url_from_fingerprint() {
     local html_fragment
     local query
     __jh_debug "About to download from https://crt.sh/?q=$1"
@@ -92,17 +92,19 @@ __jh_source_to_file() {
         cat > "$temp_file_from_stdin"
         __jh_source_to_file_result="$temp_file_from_stdin"
         __jh_source_to_file_name="STDIN"
-    elif [[ "$arg" =~ ^[0-9A-Fa-f]{64}$ ]]; then
+    elif [[ "$arg" =~ ^[0-9A-Fa-f]{64}$ ]] || [[ "$arg" =~ ^[0-9A-Fa-f]{40}$ ]]; then
         local url
-        if ! url=$(__jh_crt_sh_pem_url_from_sha256 "$arg"); then
-            echo "Warning: Could not find certificate for SHA-256 in crt.sh: $arg" >&2
+        if ! url=$(__jh_crt_sh_pem_url_from_fingerprint "$arg"); then
+            echo "Warning: Could not find certificate for fingerprint in crt.sh: $arg" >&2
             echo
             return 1
         fi
-        # TODO if crt.sh is not available or the SHA-256 is not found there, try to use an alternative site like Censys, Cert Spotter, or others. It's been observed that https://www.certkit.io/tools/ct-logs/certificate?sha256=1b49cf742e964deb1896532945f187cb89c07e0cfc9f4820dd3fb46ab9d32110 works, but it returns a different certificate in some cases, e.g. https://www.certkit.io/tools/ct-logs/certificate?sha256=b4d237c74d2e852e75bd74bbfe8e143ebbcb2130419a8282c089dfb2ab8a518c
+        # TODO if crt.sh is not available or the fingerprint is not found there, try to use an alternative site like Censys, Cert Spotter, or others. It's been observed that https://www.certkit.io/tools/ct-logs/certificate?sha256=1b49cf742e964deb1896532945f187cb89c07e0cfc9f4820dd3fb46ab9d32110 works, but it returns a different certificate in some cases, e.g. https://www.certkit.io/tools/ct-logs/certificate?sha256=b4d237c74d2e852e75bd74bbfe8e143ebbcb2130419a8282c089dfb2ab8a518c
         __jh_download_to_temp "$url"
         __jh_source_to_file_result="$__jh_download_to_temp_result"
-        __jh_source_to_file_name="$arg (SHA-256 for crt.sh)"
+        local hash_type="SHA-256"
+        [[ ${#arg} -eq 40 ]] && hash_type="SHA-1"
+        __jh_source_to_file_name="$hash_type (https://crt.sh/?q=$arg)"
     elif [[ "$arg" =~ ^https?:// ]]; then
         __jh_download_to_temp "$arg"
         # TODO for https:// URLs, if they don't download a crypto object, evaluate to get the certificates from the SSL connection
@@ -251,7 +253,7 @@ OPTIONS:
 
 SOURCES:
     File paths to crypto files (certificates, CRLs, etc.)
-    SHA-256 hashes (64 hex chars) - downloads from crt.sh
+    SHA-256 or SHA-1 hashes (64 or 40 hex chars) - downloads from crt.sh
     URLs - downloads from web
     STDIN - reads from standard input if available
 
