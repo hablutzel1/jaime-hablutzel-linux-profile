@@ -112,15 +112,13 @@ __jh_source_to_file() {
     elif [[ -f "$arg" ]]; then
         __jh_source_to_file_result="$arg"
     else
-        local temp_file_from_b64
-        temp_file_from_b64=$(__jh_create_temp_file)
-        if echo "$arg" | base64 -d > "$temp_file_from_b64" 2>/dev/null && [[ -s "$temp_file_from_b64" ]]; then
-            __jh_source_to_file_result="$temp_file_from_b64"
-            __jh_source_to_file_name="Base64"
-        else
-            echo "Unsupported source: $arg"
-            return 1
-        fi
+        # Store the raw argument in a temp file; __jh_process_crypto will
+        # attempt Base64 decoding if type detection returns "unknown".
+        local temp_file_from_raw
+        temp_file_from_raw=$(__jh_create_temp_file)
+        echo "$arg" > "$temp_file_from_raw"
+        __jh_source_to_file_result="$temp_file_from_raw"
+        __jh_source_to_file_name="argument"
     fi
 }
 
@@ -336,6 +334,20 @@ __jh_process_crypto() {
 
         local detected_type
         detected_type=$(__jh_get_type_from_file "$__jh_source_to_file_result")
+        # If type is unknown, try Base64-decoding the content
+        if [ "$detected_type" = "unknown" ]; then
+            local temp_file_from_b64
+            temp_file_from_b64=$(__jh_create_temp_file)
+            if base64 -d < "$__jh_source_to_file_result" > "$temp_file_from_b64" 2>/dev/null && [[ -s "$temp_file_from_b64" ]]; then
+                local decoded_type
+                decoded_type=$(__jh_get_type_from_file "$temp_file_from_b64")
+                if [ "$decoded_type" != "unknown" ]; then
+                    __jh_source_to_file_result="$temp_file_from_b64"
+                    detected_type="$decoded_type"
+                    __jh_source_to_file_name="$__jh_source_to_file_name (Base64-decoded)"
+                fi
+            fi
+        fi
         local effective_type
         effective_type="$detected_type"
         local overriden_type_str
