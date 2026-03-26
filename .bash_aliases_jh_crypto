@@ -111,7 +111,7 @@ __jh_source_to_file() {
         __jh_source_to_file_result="$__jh_download_to_temp_result"
     elif [[ -f "$arg" ]]; then
         __jh_source_to_file_result="$arg"
-    elif [[ ${#arg} -gt 64 && "$arg" =~ ^[A-Za-z0-9+/=[:space:]]+$ ]]; then
+    else
         local temp_file_from_b64
         temp_file_from_b64=$(__jh_create_temp_file)
         if echo "$arg" | base64 -d > "$temp_file_from_b64" 2>/dev/null && [[ -s "$temp_file_from_b64" ]]; then
@@ -121,9 +121,6 @@ __jh_source_to_file() {
             echo "Unsupported source: $arg"
             return 1
         fi
-    else
-        echo "Unsupported source: $arg"
-        return 1
     fi
 }
 
