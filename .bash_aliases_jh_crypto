@@ -118,7 +118,7 @@ __jh_source_to_file() {
 }
 
 __jh_get_type_from_file() {
-    # TODO identify 'csr', 'ocspreq', etc. Default to 'asn1' or to 'unknown'.
+    # TODO identify 'ocspreq', etc. Default to 'asn1' or to 'unknown'.
     local num_certs
     # FIXME if more than one certificate is found, it is marked as 'certchain' and any keys are ignored...
     num_certs=$(grep -c -- "-----BEGIN CERTIFICATE-----" "$1")
@@ -126,6 +126,8 @@ __jh_get_type_from_file() {
         echo "certchain"
     elif openssl x509 -in "$1" -noout >/dev/null 2>&1; then
         echo "cert"
+    elif openssl req -in "$1" -noout >/dev/null 2>&1; then
+        echo "csr"
     elif openssl crl -in "$1" -noout >/dev/null 2>&1; then
         echo "crl"
     else
@@ -150,6 +152,10 @@ __jh_get_encoding_from_file() {
 __jh_get_identity_from_cert() {
     # TODO if there is no CN, get the identity from the first SAN.
     openssl x509 ${1:+-in "$1"} -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
+}
+
+__jh_get_identity_from_csr() {
+    openssl req -in "$1" -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
 }
 
 __jh_cert_to_pem_for_saving() {
@@ -230,6 +236,8 @@ __jh_get_objects_in_file() {
         __jh_process_certificates_in_pem_file identities "$arg"
     elif [ "$detected_type" = "cert" ]; then
         __jh_get_identity_from_cert "$arg"
+    elif [ "$detected_type" = "csr" ]; then
+        __jh_get_identity_from_csr "$arg"
     elif [ "$detected_type" = "crl" ]; then
         openssl crl -in "$arg" -noout -issuer -nameopt RFC2253 | sed -n 's/^issuer=.*CN=\([^,]*\).*/\1/p'
     else
@@ -248,11 +256,11 @@ COMMANDS:
 OPTIONS:
     --help                      Show this help message
     --ossl-opts=<options>       OpenSSL options (default: "-noout -text")
-    --override-type=<type>      Force processing as specific type (cert, certchain, crl)
+    --override-type=<type>      Force processing as specific type (cert, certchain, csr, crl)
     --follow-aia-issuers        Follow AIA issuers to build certificate chains
 
 SOURCES:
-    File paths to crypto files (certificates, CRLs, etc.)
+    File paths to crypto files (certificates, CSRs, CRLs, etc.)
     SHA-256 or SHA-1 hashes (64 or 40 hex chars) - downloads from crt.sh
     URLs - downloads from web
     STDIN - reads from standard input if available
@@ -260,6 +268,7 @@ SOURCES:
 SUPPORTED TYPES:
     cert        Single X.509 certificate
     certchain   Certificate chain (multiple certificates)
+    csr         Certificate Signing Request (PKCS #10)
     crl         Certificate Revocation List
 
 EXAMPLES:
@@ -341,6 +350,14 @@ __jh_process_crypto() {
                     cat "$__jh_source_to_file_result" | __jh_cert_to_pem_for_saving >"$friendly_filename_base.crt"
                     echo "  Saved to $friendly_filename_base.crt"
                 fi
+            fi
+        elif [ "$effective_type" = "csr" ]; then
+            if [ "$action" = "print" ]; then
+                openssl req -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
+            elif [ "$action" = "save" ]; then
+                friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
+                openssl req -in "$__jh_source_to_file_result" -subject >"$friendly_filename_base.csr"
+                echo "  Saved to $friendly_filename_base.csr"
             fi
         elif [ "$effective_type" = "crl" ]; then
             if [ "$action" = "print" ]; then
