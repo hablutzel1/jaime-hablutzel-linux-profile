@@ -112,8 +112,13 @@ __jh_source_to_file() {
     elif [[ -f "$arg" ]]; then
         __jh_source_to_file_result="$arg"
     else
-        echo "Unsupported source: $arg"
-        return 1
+        # Store the raw argument in a temp file; __jh_process_crypto will
+        # attempt Base64 decoding if type detection returns "unknown".
+        local temp_file_from_raw
+        temp_file_from_raw=$(__jh_create_temp_file)
+        echo "$arg" > "$temp_file_from_raw"
+        __jh_source_to_file_result="$temp_file_from_raw"
+        __jh_source_to_file_name="argument"
     fi
 }
 
@@ -124,11 +129,11 @@ __jh_get_type_from_file() {
     num_certs=$(grep -c -- "-----BEGIN CERTIFICATE-----" "$1")
     if [ "$num_certs" -gt 1 ]; then
         echo "certchain"
-    elif openssl x509 -in "$1" -noout >/dev/null 2>&1; then
+    elif openssl x509 -in "$1" -noout >/dev/null 2>&1 || openssl x509 -in "$1" -inform DER -noout >/dev/null 2>&1; then
         echo "cert"
-    elif openssl req -in "$1" -noout >/dev/null 2>&1; then
+    elif openssl req -in "$1" -noout >/dev/null 2>&1 || openssl req -in "$1" -inform DER -noout >/dev/null 2>&1; then
         echo "csr"
-    elif openssl crl -in "$1" -noout >/dev/null 2>&1; then
+    elif openssl crl -in "$1" -noout >/dev/null 2>&1 || openssl crl -in "$1" -inform DER -noout >/dev/null 2>&1; then
         echo "crl"
     else
         echo "unknown"
@@ -149,13 +154,25 @@ __jh_get_encoding_from_file() {
     fi
 }
 
+__jh_inform_flag_for_file() {
+    if grep -q -- "-----BEGIN.*-----" "$1"; then
+        echo ""
+    else
+        echo "-inform DER"
+    fi
+}
+
 __jh_get_identity_from_cert() {
     # TODO if there is no CN, get the identity from the first SAN.
-    openssl x509 ${1:+-in "$1"} -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
+    local inform_flag
+    inform_flag=$(__jh_inform_flag_for_file "$1")
+    openssl x509 ${1:+-in "$1"} $inform_flag -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
 }
 
 __jh_get_identity_from_csr() {
-    openssl req -in "$1" -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
+    local inform_flag
+    inform_flag=$(__jh_inform_flag_for_file "$1")
+    openssl req -in "$1" $inform_flag -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
 }
 
 __jh_cert_to_pem_for_saving() {
@@ -239,7 +256,9 @@ __jh_get_objects_in_file() {
     elif [ "$detected_type" = "csr" ]; then
         __jh_get_identity_from_csr "$arg"
     elif [ "$detected_type" = "crl" ]; then
-        openssl crl -in "$arg" -noout -issuer -nameopt RFC2253 | sed -n 's/^issuer=.*CN=\([^,]*\).*/\1/p'
+        local inform_flag
+        inform_flag=$(__jh_inform_flag_for_file "$arg")
+        openssl crl -in "$arg" $inform_flag -noout -issuer -nameopt RFC2253 | sed -n 's/^issuer=.*CN=\([^,]*\).*/\1/p'
     else
         echo "unknown"
     fi
@@ -263,6 +282,7 @@ SOURCES:
     File paths to crypto files (certificates, CSRs, CRLs, etc.)
     SHA-256 or SHA-1 hashes (64 or 40 hex chars) - downloads from crt.sh
     URLs - downloads from web
+    Base64 strings - decoded and auto-detected (e.g. DER-encoded objects without PEM headers)
     STDIN - reads from standard input if available
 
 SUPPORTED TYPES:
@@ -275,6 +295,7 @@ EXAMPLES:
     jh_print_crypto certificate.pem
     jh_crypto_to_file --ossl-opts="-fingerprint -sha256" cert.pem
     jh_print_crypto --follow-aia-issuers --override-type=cert <sha256>
+    jh_print_crypto "MIIBkTCB+wIBADBSMQ..."
     echo "-----BEGIN CERTIFICATE-----..." | jh_print_crypto
 
 EOF
@@ -313,6 +334,20 @@ __jh_process_crypto() {
 
         local detected_type
         detected_type=$(__jh_get_type_from_file "$__jh_source_to_file_result")
+        # If type is unknown, try Base64-decoding the content
+        if [ "$detected_type" = "unknown" ]; then
+            local temp_file_from_b64
+            temp_file_from_b64=$(__jh_create_temp_file)
+            if base64 -d < "$__jh_source_to_file_result" > "$temp_file_from_b64" 2>/dev/null && [[ -s "$temp_file_from_b64" ]]; then
+                local decoded_type
+                decoded_type=$(__jh_get_type_from_file "$temp_file_from_b64")
+                if [ "$decoded_type" != "unknown" ]; then
+                    __jh_source_to_file_result="$temp_file_from_b64"
+                    detected_type="$decoded_type"
+                    __jh_source_to_file_name="$__jh_source_to_file_name (Base64-decoded)"
+                fi
+            fi
+        fi
         local effective_type
         effective_type="$detected_type"
         local overriden_type_str
@@ -324,6 +359,9 @@ __jh_process_crypto() {
 
         local encoding
         encoding=$(__jh_get_encoding_from_file "$__jh_source_to_file_result")
+
+        local inform_flag
+        inform_flag=$(__jh_inform_flag_for_file "$__jh_source_to_file_result")
 
         local objects_in_file
         objects_in_file=$(__jh_get_objects_in_file "$__jh_source_to_file_result")        
@@ -344,27 +382,27 @@ __jh_process_crypto() {
                 __jh_process_certificates_in_pem_file "$action" "$(__jh_build_pem_following_aia_issuers "$__jh_source_to_file_result")" "$ossl_opts"
             else
                 if [ "$action" = "print" ]; then
-                    cat "$__jh_source_to_file_result" | openssl x509 $ossl_opts | sed 's/^/  /'
+                    openssl x509 -in "$__jh_source_to_file_result" $inform_flag $ossl_opts | sed 's/^/  /'
                 elif [ "$action" = "save" ]; then
                     friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
-                    cat "$__jh_source_to_file_result" | __jh_cert_to_pem_for_saving >"$friendly_filename_base.crt"
+                    openssl x509 -in "$__jh_source_to_file_result" $inform_flag | __jh_cert_to_pem_for_saving >"$friendly_filename_base.crt"
                     echo "  Saved to $friendly_filename_base.crt"
                 fi
             fi
         elif [ "$effective_type" = "csr" ]; then
             if [ "$action" = "print" ]; then
-                openssl req -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
+                openssl req -in "$__jh_source_to_file_result" $inform_flag $ossl_opts | sed 's/^/  /'
             elif [ "$action" = "save" ]; then
                 friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
-                openssl req -in "$__jh_source_to_file_result" -subject >"$friendly_filename_base.csr"
+                openssl req -in "$__jh_source_to_file_result" $inform_flag -subject >"$friendly_filename_base.csr"
                 echo "  Saved to $friendly_filename_base.csr"
             fi
         elif [ "$effective_type" = "crl" ]; then
             if [ "$action" = "print" ]; then
-                openssl crl -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
+                openssl crl -in "$__jh_source_to_file_result" $inform_flag $ossl_opts | sed 's/^/  /'
             elif [ "$action" = "save" ]; then
                 friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
-                openssl crl -in "$__jh_source_to_file_result" -issuer >"$friendly_filename_base.crl"
+                openssl crl -in "$__jh_source_to_file_result" $inform_flag -issuer >"$friendly_filename_base.crl"
                 echo "  Saved to $friendly_filename_base.crl"
             fi
         fi
