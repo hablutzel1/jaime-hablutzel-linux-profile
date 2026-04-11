@@ -154,25 +154,13 @@ __jh_get_encoding_from_file() {
     fi
 }
 
-__jh_inform_flag_for_file() {
-    if grep -q -- "-----BEGIN.*-----" "$1"; then
-        echo ""
-    else
-        echo "-inform DER"
-    fi
-}
-
 __jh_get_identity_from_cert() {
     # TODO if there is no CN, get the identity from the first SAN.
-    local inform_flag
-    inform_flag=$(__jh_inform_flag_for_file "$1")
-    openssl x509 ${1:+-in "$1"} $inform_flag -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
+    openssl x509 ${1:+-in "$1"} -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
 }
 
 __jh_get_identity_from_csr() {
-    local inform_flag
-    inform_flag=$(__jh_inform_flag_for_file "$1")
-    openssl req -in "$1" $inform_flag -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
+    openssl req -in "$1" -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
 }
 
 __jh_cert_to_pem_for_saving() {
@@ -256,9 +244,7 @@ __jh_get_objects_in_file() {
     elif [ "$detected_type" = "csr" ]; then
         __jh_get_identity_from_csr "$arg"
     elif [ "$detected_type" = "crl" ]; then
-        local inform_flag
-        inform_flag=$(__jh_inform_flag_for_file "$arg")
-        openssl crl -in "$arg" $inform_flag -noout -issuer -nameopt RFC2253 | sed -n 's/^issuer=.*CN=\([^,]*\).*/\1/p'
+        openssl crl -in "$arg" -noout -issuer -nameopt RFC2253 | sed -n 's/^issuer=.*CN=\([^,]*\).*/\1/p'
     else
         echo "unknown"
     fi
@@ -360,9 +346,6 @@ __jh_process_crypto() {
         local encoding
         encoding=$(__jh_get_encoding_from_file "$__jh_source_to_file_result")
 
-        local inform_flag
-        inform_flag=$(__jh_inform_flag_for_file "$__jh_source_to_file_result")
-
         local objects_in_file
         objects_in_file=$(__jh_get_objects_in_file "$__jh_source_to_file_result")        
         
@@ -382,27 +365,27 @@ __jh_process_crypto() {
                 __jh_process_certificates_in_pem_file "$action" "$(__jh_build_pem_following_aia_issuers "$__jh_source_to_file_result")" "$ossl_opts"
             else
                 if [ "$action" = "print" ]; then
-                    openssl x509 -in "$__jh_source_to_file_result" $inform_flag $ossl_opts | sed 's/^/  /'
+                    openssl x509 -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
                 elif [ "$action" = "save" ]; then
                     friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
-                    openssl x509 -in "$__jh_source_to_file_result" $inform_flag | __jh_cert_to_pem_for_saving >"$friendly_filename_base.crt"
+                    openssl x509 -in "$__jh_source_to_file_result" | __jh_cert_to_pem_for_saving >"$friendly_filename_base.crt"
                     echo "  Saved to $friendly_filename_base.crt"
                 fi
             fi
         elif [ "$effective_type" = "csr" ]; then
             if [ "$action" = "print" ]; then
-                openssl req -in "$__jh_source_to_file_result" $inform_flag $ossl_opts | sed 's/^/  /'
+                openssl req -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
             elif [ "$action" = "save" ]; then
                 friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
-                openssl req -in "$__jh_source_to_file_result" $inform_flag -subject >"$friendly_filename_base.csr"
+                openssl req -in "$__jh_source_to_file_result" -subject >"$friendly_filename_base.csr"
                 echo "  Saved to $friendly_filename_base.csr"
             fi
         elif [ "$effective_type" = "crl" ]; then
             if [ "$action" = "print" ]; then
-                openssl crl -in "$__jh_source_to_file_result" $inform_flag $ossl_opts | sed 's/^/  /'
+                openssl crl -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
             elif [ "$action" = "save" ]; then
                 friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
-                openssl crl -in "$__jh_source_to_file_result" $inform_flag -issuer >"$friendly_filename_base.crl"
+                openssl crl -in "$__jh_source_to_file_result" -issuer >"$friendly_filename_base.crl"
                 echo "  Saved to $friendly_filename_base.crl"
             fi
         fi
