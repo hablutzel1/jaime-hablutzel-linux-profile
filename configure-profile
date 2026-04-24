@@ -139,6 +139,8 @@ append_profile_file 'export VISUAL' 'export VISUAL=vim; export EDITOR="$VISUAL";
 # Less customizations
 # Case-insensitive search by default.
 append_profile_file 'export LESS' 'export LESS="-i -R"'
+# UTF-8 charset for Less
+append_profile_file 'export LESSCHARSET' 'export LESSCHARSET=utf-8'
 
 if is_interactive_shell && [ -z "$JHLP_NO_MULTIPLEXER" ] && ( ! command -v tmux &>/dev/null || ! command -v screen &>/dev/null ); then
   echo "Do you want to set up a multiplexer (tmux or screen)? (y/n)"
