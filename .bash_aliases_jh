@@ -252,7 +252,7 @@ osslcertordered() {
   original_extensions=$(echo "$cert" | sed -n -e '/X509v3 extensions:/,/Signature Algorithm:/p')
   after_extensions=$(echo "$cert" | awk '/Signature Algorithm/{a=""} {a=a$0"\n"} END{print a}')
 
-  IFS=$'\n'
+  local IFS=$'\n'
   ext_name_start_chars='[a-zA-Z0-9]'
   declare -A ext_contents_map
   for ext in $(echo "$original_extensions" | grep -E "^ {12}$ext_name_start_chars"); do
