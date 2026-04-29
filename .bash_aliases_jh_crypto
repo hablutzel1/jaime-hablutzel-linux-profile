@@ -157,9 +157,9 @@ __jh_get_encoding_from_file() {
 __jh_get_identity_from_cert() {
     # TODO if there is no CN, get the identity from the first SAN.
     # When called with no arg, stdin is DER (from base64 -d); with a file arg the file is PEM.
-    local inform_opt=
-    [ -z "${1:-}" ] && inform_opt="-inform DER"
-    openssl x509 ${1:+-in "$1"} $inform_opt -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
+    local -a inform_opt=()
+    [ -z "${1:-}" ] && inform_opt=(-inform DER)
+    openssl x509 ${1:+-in "$1"} "${inform_opt[@]}" -noout -subject -nameopt RFC2253 | sed -n 's/^subject=.*CN=\([^,]*\).*/\1/p'
 }
 
 __jh_get_identity_from_csr() {
@@ -178,7 +178,9 @@ __jh_get_friendly_filename_base() {
 __jh_process_certificates_in_pem_file() {
     local action=$1
     local pem_file=$2
-    local ossl_opts=$3
+    shift 2
+    local -a ossl_opts=("$@")
+    local IFS
     local identities
     identities=()
     while IFS=$'\t' read -r count b64; do
@@ -186,7 +188,7 @@ __jh_process_certificates_in_pem_file() {
             identities+=("$(echo "$b64" | base64 -d | __jh_get_identity_from_cert)")
         elif [ "$action" = "print" ]; then
             echo "  - $count: $(echo "$b64" | base64 -d | __jh_get_identity_from_cert)"
-            echo "$b64" | base64 -d | openssl x509 -inform DER $ossl_opts | sed 's/^/    /'
+            echo "$b64" | base64 -d | openssl x509 -inform DER "${ossl_opts[@]}" | sed 's/^/    /'
         elif [ "$action" = "save" ]; then
             local friendly_filename_base
             # TODO try to remove the redundancy with __jh_process_crypto
@@ -302,8 +304,10 @@ __jh_process_crypto() {
         return 0
     fi
     
-    local ossl_opts
-    ossl_opts="$(__jh_process_args_get_option "--ossl-opts" "-noout -text")"    
+    local -a ossl_opts
+    local ossl_opts_str
+    ossl_opts_str="$(__jh_process_args_get_option "--ossl-opts" "-noout -text")"
+    IFS=$' \t\n' read -ra ossl_opts <<< "$ossl_opts_str"
 
     local override_type
     override_type="$(__jh_process_args_get_option "--override-type")"
@@ -357,7 +361,7 @@ __jh_process_crypto() {
         local friendly_filename_base
         if [ "$effective_type" = "certchain" ]; then
             if [ "$action" = "print" ]; then
-                __jh_process_certificates_in_pem_file print "$__jh_source_to_file_result" "$ossl_opts"
+                __jh_process_certificates_in_pem_file print "$__jh_source_to_file_result" "${ossl_opts[@]}"
             elif [ "$action" = "save" ]; then
                 __jh_process_certificates_in_pem_file save "$__jh_source_to_file_result"
             fi
@@ -365,10 +369,10 @@ __jh_process_crypto() {
             local follow_aia_issuers
             follow_aia_issuers=$(__jh_process_args_get_option "--follow-aia-issuers")
             if [ "$follow_aia_issuers" = true ]; then
-                __jh_process_certificates_in_pem_file "$action" "$(__jh_build_pem_following_aia_issuers "$__jh_source_to_file_result")" "$ossl_opts"
+                __jh_process_certificates_in_pem_file "$action" "$(__jh_build_pem_following_aia_issuers "$__jh_source_to_file_result")" "${ossl_opts[@]}"
             else
                 if [ "$action" = "print" ]; then
-                    openssl x509 -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
+                    openssl x509 -in "$__jh_source_to_file_result" "${ossl_opts[@]}" | sed 's/^/  /'
                 elif [ "$action" = "save" ]; then
                     friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
                     openssl x509 -in "$__jh_source_to_file_result" | __jh_cert_to_pem_for_saving >"$friendly_filename_base.crt"
@@ -377,7 +381,7 @@ __jh_process_crypto() {
             fi
         elif [ "$effective_type" = "csr" ]; then
             if [ "$action" = "print" ]; then
-                openssl req -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
+                openssl req -in "$__jh_source_to_file_result" "${ossl_opts[@]}" | sed 's/^/  /'
             elif [ "$action" = "save" ]; then
                 friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
                 openssl req -in "$__jh_source_to_file_result" -subject >"$friendly_filename_base.csr"
@@ -385,7 +389,7 @@ __jh_process_crypto() {
             fi
         elif [ "$effective_type" = "crl" ]; then
             if [ "$action" = "print" ]; then
-                openssl crl -in "$__jh_source_to_file_result" $ossl_opts | sed 's/^/  /'
+                openssl crl -in "$__jh_source_to_file_result" "${ossl_opts[@]}" | sed 's/^/  /'
             elif [ "$action" = "save" ]; then
                 friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
                 openssl crl -in "$__jh_source_to_file_result" -issuer >"$friendly_filename_base.crl"
