@@ -175,6 +175,18 @@ __jh_get_friendly_filename_base() {
     echo "$identity" | sed 's/[^[:alnum:]]/_/g'
 }
 
+__jh_unique_filename() {
+    local base=$1
+    local ext=$2
+    local filename="${base}.${ext}"
+    local counter=1
+    while [[ -f "$filename" ]]; do
+        filename="${base}_${counter}.${ext}"
+        counter=$((counter + 1))
+    done
+    echo "$filename"
+}
+
 __jh_process_certificates_in_pem_file() {
     local action=$1
     local pem_file=$2
@@ -194,7 +206,7 @@ __jh_process_certificates_in_pem_file() {
             # TODO try to remove the redundancy with __jh_process_crypto
             friendly_filename_base="$(__jh_get_friendly_filename_base "$(echo "$b64" | base64 -d | __jh_get_identity_from_cert)")"
             local filename
-            filename="${count}_${friendly_filename_base}.crt"
+            filename=$(__jh_unique_filename "${count}_${friendly_filename_base}" "crt")
             echo "$b64" | base64 -d | __jh_cert_to_pem_for_saving -inform DER > "$filename"
             echo "  - Saved to ${filename}"
         fi
@@ -375,8 +387,10 @@ __jh_process_crypto() {
                     openssl x509 -in "$__jh_source_to_file_result" "${ossl_opts[@]}" | sed 's/^/  /'
                 elif [ "$action" = "save" ]; then
                     friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
-                    openssl x509 -in "$__jh_source_to_file_result" | __jh_cert_to_pem_for_saving >"$friendly_filename_base.crt"
-                    echo "  Saved to $friendly_filename_base.crt"
+                    local cert_target_file
+                    cert_target_file=$(__jh_unique_filename "$friendly_filename_base" "crt")
+                    openssl x509 -in "$__jh_source_to_file_result" | __jh_cert_to_pem_for_saving >"$cert_target_file"
+                    echo "  Saved to $cert_target_file"
                 fi
             fi
         elif [ "$effective_type" = "csr" ]; then
@@ -384,16 +398,20 @@ __jh_process_crypto() {
                 openssl req -in "$__jh_source_to_file_result" "${ossl_opts[@]}" | sed 's/^/  /'
             elif [ "$action" = "save" ]; then
                 friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
-                openssl req -in "$__jh_source_to_file_result" -subject >"$friendly_filename_base.csr"
-                echo "  Saved to $friendly_filename_base.csr"
+                local csr_target_file
+                csr_target_file=$(__jh_unique_filename "$friendly_filename_base" "csr")
+                openssl req -in "$__jh_source_to_file_result" -subject >"$csr_target_file"
+                echo "  Saved to $csr_target_file"
             fi
         elif [ "$effective_type" = "crl" ]; then
             if [ "$action" = "print" ]; then
                 openssl crl -in "$__jh_source_to_file_result" "${ossl_opts[@]}" | sed 's/^/  /'
             elif [ "$action" = "save" ]; then
                 friendly_filename_base=$(__jh_get_friendly_filename_base "$objects_in_file")
-                openssl crl -in "$__jh_source_to_file_result" -issuer >"$friendly_filename_base.crl"
-                echo "  Saved to $friendly_filename_base.crl"
+                local crl_target_file
+                crl_target_file=$(__jh_unique_filename "$friendly_filename_base" "crl")
+                openssl crl -in "$__jh_source_to_file_result" -issuer >"$crl_target_file"
+                echo "  Saved to $crl_target_file"
             fi
         fi
     done
