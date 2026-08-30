@@ -203,6 +203,8 @@ __jh_process_certificates_in_pem_file() {
     local -a ossl_opts=("$@")
     local IFS
     local identities
+    local count
+    local b64
     identities=()
     while IFS=$'\t' read -r count b64; do
         if [ "$action" = "identities" ]; then
@@ -234,6 +236,7 @@ __jh_process_certificates_in_pem_file() {
 ' "$pem_file")
     if [ "$action" = "identities" ]; then
         local result
+        local i
         for i in "${!identities[@]}"; do
             result="$result${identities[i]}, "
         done
@@ -252,6 +255,8 @@ __jh_build_pem_following_aia_issuers() {
     __jh_create_temp_file
     temp_pem_chain="$__jh_create_temp_file_result"
     local cur_file="$initial_file"
+    local cur_aia_ext
+    local cur_aia_url
     while true; do
         openssl x509 -in "$cur_file" >>"$temp_pem_chain"
         cur_aia_ext=$(openssl x509 -in "$cur_file" -noout -ext authorityInfoAccess 2>&1)
@@ -348,6 +353,7 @@ __jh_process_crypto() {
     # Add sources from positional arguments
     sources+=("${__jh_process_args_result_args[@]}")    
 
+    local source
     for source in "${sources[@]}"; do
 
         __jh_source_to_file "$source" || continue
