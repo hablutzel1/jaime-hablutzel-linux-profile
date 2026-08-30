@@ -66,17 +66,24 @@ __jh_crt_sh_pem_url_from_fingerprint() {
     echo "https://crt.sh/$query"
 }
 
+# Creates a temporary file, adds it to __jh_temp_files so that __jh_cleanup
+# removes it, and writes its path to __jh_create_temp_file_result. The path goes
+# to a variable rather than to the standard output because a caller that read it
+# with a command substitution would run this function in a subshell, where
+# __jh_temp_files is a copy that is discarded when the subshell ends, so the file
+# would never be removed.
 __jh_create_temp_file() {
     local temp_file
     temp_file=$(mktemp)
     __jh_temp_files+=("$temp_file")
-    echo "$temp_file"
+    __jh_create_temp_file_result="$temp_file"
 }
 
 __jh_download_to_temp() {
     local url=$1
     local temp_file
-    temp_file=$(__jh_create_temp_file)
+    __jh_create_temp_file
+    temp_file="$__jh_create_temp_file_result"
     __jh_debug "About to download from $url to $temp_file"
     wget --quiet --content-disposition -O "$temp_file" "$url"
     __jh_download_to_temp_result="$temp_file"
@@ -88,7 +95,8 @@ __jh_source_to_file() {
     __jh_source_to_file_name="$arg"
     if [[ "$arg" == "<STDIN>" ]]; then
         local temp_file_from_stdin
-        temp_file_from_stdin=$(__jh_create_temp_file)
+        __jh_create_temp_file
+        temp_file_from_stdin="$__jh_create_temp_file_result"
         cat > "$temp_file_from_stdin"
         __jh_source_to_file_result="$temp_file_from_stdin"
         __jh_source_to_file_name="STDIN"
@@ -115,7 +123,8 @@ __jh_source_to_file() {
         # Store the raw argument in a temp file; __jh_process_crypto will
         # attempt Base64 decoding if type detection returns "unknown".
         local temp_file_from_raw
-        temp_file_from_raw=$(__jh_create_temp_file)
+        __jh_create_temp_file
+        temp_file_from_raw="$__jh_create_temp_file_result"
         echo "$arg" > "$temp_file_from_raw"
         __jh_source_to_file_result="$temp_file_from_raw"
         __jh_source_to_file_name="argument"
@@ -232,10 +241,16 @@ __jh_process_certificates_in_pem_file() {
     fi
 }
 
+# Writes to __jh_build_pem_following_aia_issuers_result the path of a temporary
+# PEM file holding the certificate in $1 followed by every issuer reached through
+# the CA Issuers URI of its Authority Information Access extension. The path goes
+# to a variable for the reason given above __jh_create_temp_file: this function
+# creates temporary files, so it must not run in a subshell.
 __jh_build_pem_following_aia_issuers() {
     local initial_file=$1
     local temp_pem_chain
-    temp_pem_chain=$(__jh_create_temp_file)
+    __jh_create_temp_file
+    temp_pem_chain="$__jh_create_temp_file_result"
     local cur_file="$initial_file"
     while true; do
         openssl x509 -in "$cur_file" >>"$temp_pem_chain"
@@ -247,7 +262,7 @@ __jh_build_pem_following_aia_issuers() {
         __jh_download_to_temp "$cur_aia_url"
         cur_file="$__jh_download_to_temp_result"
     done
-    echo "$temp_pem_chain"
+    __jh_build_pem_following_aia_issuers_result="$temp_pem_chain"
 }
 
 __jh_get_objects_in_file() {
@@ -342,7 +357,8 @@ __jh_process_crypto() {
         # If type is unknown, try Base64-decoding the content
         if [ "$detected_type" = "unknown" ]; then
             local temp_file_from_b64
-            temp_file_from_b64=$(__jh_create_temp_file)
+            __jh_create_temp_file
+            temp_file_from_b64="$__jh_create_temp_file_result"
             if base64 -d < "$__jh_source_to_file_result" > "$temp_file_from_b64" 2>/dev/null && [[ -s "$temp_file_from_b64" ]]; then
                 local decoded_type
                 decoded_type=$(__jh_get_type_from_file "$temp_file_from_b64")
@@ -381,7 +397,8 @@ __jh_process_crypto() {
             local follow_aia_issuers
             follow_aia_issuers=$(__jh_process_args_get_option "--follow-aia-issuers")
             if [ "$follow_aia_issuers" = true ]; then
-                __jh_process_certificates_in_pem_file "$action" "$(__jh_build_pem_following_aia_issuers "$__jh_source_to_file_result")" "${ossl_opts[@]}"
+                __jh_build_pem_following_aia_issuers "$__jh_source_to_file_result"
+                __jh_process_certificates_in_pem_file "$action" "$__jh_build_pem_following_aia_issuers_result" "${ossl_opts[@]}"
             else
                 if [ "$action" = "print" ]; then
                     openssl x509 -in "$__jh_source_to_file_result" "${ossl_opts[@]}" | sed 's/^/  /'
