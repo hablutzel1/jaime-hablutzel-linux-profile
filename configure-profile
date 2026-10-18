@@ -156,23 +156,6 @@ cp $DIR/.vimrc ~/.vimrc
 mkdir -p ~/.config/nvim
 cp $DIR/init.vim ~/.config/nvim/init.vim
 
-######
-# windsurf.vim
-######
-# TODO compare against https://github.com/Exafunction/windsurf.nvim, which apparently is native to Neovim.
-if is_interactive && [ ! -d ~/.config/nvim/pack/Exafunction/start/windsurf.vim ]; then
-  echo "Do you want to install the windsurf.vim plugin for Neovim? (y/n)"
-  read -r reply
-  echo
-  case $reply in
-    [Yy])
-      # TODO instead of cron to keep the repository updated, evaluate an installation alternative with support for automatic updates, e.g. by using a plugin manager like lazy.nvim
-      git clone https://github.com/Exafunction/windsurf.vim ~/.config/nvim/pack/Exafunction/start/windsurf.vim
-      # TODO try to prompt for log in to Windsurf immediately after installing it.
-      ;;
-  esac
-fi
-
 if is_bash; then
   # Default editor
   # TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc (where these variables might not require to be exported). See https://unix.stackexchange.com/a/129144/11564.
@@ -311,15 +294,12 @@ sed -i.bak -e '/.jaime-hablutzel-linux-profile/d' $tmpcronfile && rm ${tmpcronfi
 # Keep the following lines even though they should be required only once per host as cleanup.
 sed -i.bak -e '/.codex-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
 sed -i.bak -e '/.chatgpt-shell-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
+sed -i.bak -e '/windsurf.vim/d' $tmpcronfile && rm ${tmpcronfile}.bak
 # TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
 echo >> $tmpcronfile
 # TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
 # TODO instead of supressing STDERR, evaluate to always send it to a Git ignored file under ~/.jaime-hablutzel-linux-profile/ to avoid totally losing possible errors like "fatal: unable to access 'https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git/': The requested URL returned error: 504".
 echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
-if [ -d ~/.config/nvim/pack/Exafunction/start/windsurf.vim ]; then
-  sed -i.bak -e '/windsurf.vim/d' $tmpcronfile && rm ${tmpcronfile}.bak
-  echo "0 16 * * * cd ~/.config/nvim/pack/Exafunction/start/windsurf.vim && git pull -q 2>/dev/null" >> $tmpcronfile
-fi
 crontab $tmpcronfile
 rm -f $tmpcronfile
 
@@ -339,6 +319,13 @@ rm -rf ~/.chatgpt-shell-cli
 remove_all_matches 'export COLUMNS'
 remove_all_matches 'export OPENAI_KEY'
 remove_all_matches 'export JHLP_NO_CHATGPT_SHELL_CLI'
+
+#####
+# Uninstall old windsurf.vim plugin for Neovim
+# Keep it even though it should be required only once per host as cleanup.
+#####
+rm -rf ~/.config/nvim/pack/Exafunction/start/windsurf.vim
+rmdir ~/.config/nvim/pack/Exafunction/start ~/.config/nvim/pack/Exafunction ~/.config/nvim/pack 2>/dev/null
 
 #####
 # Remove the copies of the old alias files, replaced by jhlp_aliases, bin/ and lib/
