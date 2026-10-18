@@ -8,8 +8,8 @@
 
 alias diff='diff --color -u'
 
-alias la="ls -la"
-alias lat="ls -lat"
+alias jh_la="ls -la"
+alias jh_lat="ls -lat"
 
 # Using autossh by default for automatic reconnections.
 if [ -x "$(command -v autossh)" ]; then
@@ -17,7 +17,7 @@ if [ -x "$(command -v autossh)" ]; then
 fi
 
 # An iTerm2 Trigger is expected to be set up for the output of this alias.
-alias n='echo processCompletedNotificationForITerm2!'
+alias jh_n='echo processCompletedNotificationForITerm2!'
 
 ############################
 # AI shell assistants
@@ -28,37 +28,37 @@ alias n='echo processCompletedNotificationForITerm2!'
 # iptables/firewall related
 ###########################
 # TODO check is it really good practice to put 'sudo' in aliases definitions?.
-alias iln='sudo iptables -L -t nat -n -v --line-numbers '
-alias il6='sudo ip6tables -L -n -v --line-numbers'
+alias jh_iln='sudo iptables -L -t nat -n -v --line-numbers '
+alias jh_il6='sudo ip6tables -L -n -v --line-numbers'
 
 ###########################
 # PVE hosts related
 ###########################
 # TODO try to provide the default password too, i.e. 'secret'.
 # TODO check if the following $1 is really working as this technique didn't work for pem_certs being an alias.
-alias console="sudo pct console $1 -escape '^l'"
+alias jh_console="sudo pct console $1 -escape '^l'"
 
 ###########################
 # Git repositories related, e.g. etckeeper
 ###########################
-alias gs="git status -u"
-alias gsh="git show "
-alias gd="git diff"
-alias gds="git diff --staged"
-alias gl="git log --graph --all --decorate"
-alias gls="git log --graph --all --decorate --name-status"
-alias gaa="git add -A"
-alias gc="git commit -m "
+alias jh_gs="git status -u"
+alias jh_gsh="git show "
+alias jh_gd="git diff"
+alias jh_gds="git diff --staged"
+alias jh_gl="git log --graph --all --decorate"
+alias jh_gls="git log --graph --all --decorate --name-status"
+alias jh_gaa="git add -A"
+alias jh_gc="git commit -m "
 # TODO check: maybe the following could be replaced by a proper Git alias. See https://stackoverflow.com/a/2419270/320594.
-alias gct="git add -A && git commit -m \"UNREVIEWED: Quick commit.\""
-alias gctp="gct; git push"
-alias ec="etckeeper commit "
-alias ect="etckeeper commit \"UNREVIEWED: Quick commit.\""
-alias etckeeper-pre-commit-disable="sudo mv /etc/.git/hooks/pre-commit /etc/.git/hooks/pre-commit.disabled"
-alias etckeeper-pre-commit-enable="sudo mv /etc/.git/hooks/pre-commit.disabled /etc/.git/hooks/pre-commit"
+alias jh_gct="git add -A && git commit -m \"UNREVIEWED: Quick commit.\""
+alias jh_gctp="jh_gct; git push"
+alias jh_ec="etckeeper commit "
+alias jh_ect="etckeeper commit \"UNREVIEWED: Quick commit.\""
+alias jh_etckeeper-pre-commit-disable="sudo mv /etc/.git/hooks/pre-commit /etc/.git/hooks/pre-commit.disabled"
+alias jh_etckeeper-pre-commit-enable="sudo mv /etc/.git/hooks/pre-commit.disabled /etc/.git/hooks/pre-commit"
 
 ###########################
 # screen related
 ##########################
-alias sls="screen -ls"
-alias srd="screen -rd"
+alias jh_sls="screen -ls"
+alias jh_srd="screen -rd"

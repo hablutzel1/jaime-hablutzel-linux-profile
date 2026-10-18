@@ -4,12 +4,12 @@
 # General
 ###########################
 
-urlencode() { python -c "import urllib; print urllib.quote('''$1''', '')"; }
+jh_urlencode() { python -c "import urllib; print urllib.quote('''$1''', '')"; }
 
 # To allow to visually differentiate STDOUT from STDERR
-color() { "$@" 2>&1>&3|sed 's,.*,\x1B[31m&\x1B[0m,'>&2; } 3>&1
+jh_color() { "$@" 2>&1>&3|sed 's,.*,\x1B[31m&\x1B[0m,'>&2; } 3>&1
 
-mine () {
+jh_mine () {
 # TODO prompt for confirmation if I'm outside my home folder.
 # TODO check if it works if we are the "root" user itself.
 if [ -z "$SUDO_USER" ]; then
@@ -41,7 +41,7 @@ fi
 #    fi
 #}
 
-copyfullpath() {
+jh_copyfullpath() {
     readlink -n -f "$1" | pbcopy
     echo "Full path copied to clipboard."
 }
@@ -49,7 +49,7 @@ copyfullpath() {
 ###########################
 # iptables/firewall related
 ###########################
-function il {
+function jh_il {
 # TODO if we are already USER=root, do not execute with "sudo" as it is not required. Maybe extract a function like: "sudo_if_not_root" and use it in this entire file.
 sudo iptables -n -v --line-numbers -L $@
 }
@@ -60,7 +60,7 @@ sudo iptables -n -v --line-numbers -L $@
 
 # TODO gradually migrate all the following functions to crypto.bash. Maybe keep some of the current aliases as shortcuts to the new functions.
 
-osslpemcerts() {
+jh_osslpemcerts() {
     if [ "$#" -eq 0 ]; then
         openssl crl2pkcs7 -nocrl -certfile /dev/stdin | openssl pkcs7 -print_certs -text;
     else
@@ -68,14 +68,14 @@ osslpemcerts() {
     fi
 }
 
-crt_sh_pem_url_from_sha256() {
+jh_crt_sh_pem_url_from_sha256() {
   html_fragment=$(curl -sf https://crt.sh/?q=$1 | grep "Download Certificate: <A href=\"") || return 1
   query=$(echo "$html_fragment" | sed -n 's/.*href="\([^"]*\)".*/\1/p')
   echo "https://crt.sh/$query"
 }
 
 # Since OpenSSL 3.0, the input encoding is detected automatically, so the -inform flag is not required anymore. See https://www.openssl.org/docs/man3.0/man1/openssl-format-options.html.
-osslcert() {
+jh_osslcert() {
   local filenames=()
   local temp_files=()
   local default_options=(-noout -text)
@@ -90,7 +90,7 @@ osslcert() {
     if ! $option_match_found; then
       if [[ "$arg" =~ ^[0-9A-Fa-f]{64}$ ]]; then
         sha256=$arg
-        url=$(crt_sh_pem_url_from_sha256 "$sha256")
+        url=$(jh_crt_sh_pem_url_from_sha256 "$sha256")
         if [ $? -ne 0 ]; then
           echo "Warning: Could not find certificate for SHA-256 in crt.sh: $sha256" >&2
           echo
@@ -100,7 +100,7 @@ osslcert() {
         temp_files+=("$temp_file")
         wget --quiet --content-disposition -O "$temp_file" "$url"
         arg="$temp_file"
-      # TODO support 'https://'' in osslcertordered and maybe other places.
+      # TODO support 'https://'' in jh_osslcertordered and maybe other places.
       elif [[ "$arg" =~ ^https?:// ]]; then
         temp_file=$(mktemp)
         temp_files+=("$temp_file")
@@ -131,19 +131,19 @@ osslcert() {
 }
 
 # Encoding enforcing versions.
-osslpemcert() {
-    osslcert "$@" -inform PEM
+jh_osslpemcert() {
+    jh_osslcert "$@" -inform PEM
 }
-ossldercert() {
-  osslcert "$@" -inform DER
+jh_ossldercert() {
+  jh_osslcert "$@" -inform DER
 }
 
 # TODO check if the variables inside, e.g. `cert` or `IFS` affect the outer scope.
 # TODO check if I have written something similar in the past. Try to locate the script or program I made for ordering certificates and comparing them.
 # TODO write some automated tests for this method because there is compliance risk involved if it malfuctions.
 # TODO ensure it works with certificates without extensions at all (test OpenSSL 1.x and 3.x).
-# TODO try to reuse `osslcert` instead of invoking `openssl` directly.
-osslcertordered() {
+# TODO try to reuse `jh_osslcert` instead of invoking `openssl` directly.
+jh_osslcertordered() {
   local filenames=()
   local default_options=(-noout -text)
   local extra_options=()
@@ -212,7 +212,7 @@ osslcertordered() {
   echo "$after_extensions"
 }
 
-function osslcheckocsp() {
+function jh_osslcheckocsp() {
   if [ -f "$1" ]; then
     cert_file="$1"
   else
@@ -235,8 +235,8 @@ function osslcheckocsp() {
   fi
 }
 
-function osslreq(){
-  # TODO try to remove the redundancy with the `osslcert` function.
+function jh_osslreq(){
+  # TODO try to remove the redundancy with the `jh_osslcert` function.
   local filenames=()
   local default_options=(-noout -text)
   local extra_options=()
@@ -266,7 +266,7 @@ function osslreq(){
   fi
 }
 
-osslretrievesslchain() {
+jh_osslretrievesslchain() {
   local url="$1"
   local domain port
   url="${url#*://}"
@@ -278,5 +278,5 @@ osslretrievesslchain() {
     port=443
   fi
   domain="${domain%%/*}"
-  openssl s_client -showcerts -connect "$domain:$port" < /dev/null | osslpemcerts
+  openssl s_client -showcerts -connect "$domain:$port" < /dev/null | jh_osslpemcerts
 }
