@@ -1,57 +1,88 @@
-# TODO before executing anything, validate that the current shell is Bash as this configuration script is Bash specific.
+#!/bin/sh
+# Usage: configure-profile [--non-interactive] [bash|zsh]
+# POSIX sh, so it runs the same from any shell. Run it, don't source it.
 
 # TODO check if Augeas can be used for the following purpose as it apparently could preserve formatting and location of edit. See https://stackoverflow.com/a/50323373/320594.
-function remove_matching_line() {
+remove_matching_line() {
     [ -f "$1" ] && sed -i.bak -e "/$2/d" $1 && rm ${1}.bak
 }
-# TODO evaluate not to remove previous matches in standard files as this could lead to syntax errors, e.g. if we match the whole content of an "if" clause, the following would delete its content producing a syntax problem. Prefer to perform the appropriate configuration overrides only from my own dedicated files, e.g. .bashrc_jh or .bash_profile_jh (but in that case perform a final removal of the entries I placed in the defaul shell configuration files, maybe by receiving the patterns in something like a 'old_patterns_to_delete' that removes previous entries only once in which case it will need a marker file or something like that to get sure of performing this only once).
-function remove_all_matches() {
+# TODO evaluate not to remove previous matches in standard files as this could lead to syntax errors, e.g. if we match the whole content of an "if" clause, the following would delete its content producing a syntax problem. Prefer to perform the appropriate configuration overrides only from my own dedicated files, e.g. .jhlp_bashrc or .jhlp_bash_profile (but in that case perform a final removal of the entries I placed in the defaul shell configuration files, maybe by receiving the patterns in something like a 'old_patterns_to_delete' that removes previous entries only once in which case it will need a marker file or something like that to get sure of performing this only once).
+remove_all_matches() {
     remove_matching_line ~/.bashrc "$1"
     remove_matching_line ~/.bash_profile "$1"
     remove_matching_line ~/.profile "$1"
 }
-function prepend_bashrc() {
+prepend_bashrc() {
     remove_all_matches "$1"
     sed -i.bak -e "1s;^;$2\n;" ~/.bashrc && rm ~/.bashrc.bak
 }
-function prepend_bashrc_2() {
+prepend_bashrc_2() {
     remove_matching_line ~/.bashrc "$1"
     sed -i.bak -e "1s;^;$2\n;" ~/.bashrc && rm ~/.bashrc.bak
 }
-function append_bashrc() {
+# printf instead of echo, because the echo of dash and of macOS /bin/sh interprets backslash escapes such as the \033 in PROMPT_COMMAND.
+append_bashrc() {
     remove_all_matches "$1"
-    echo $2 >> ~/.bashrc
+    printf '%s\n' "$2" >> ~/.bashrc
 }
-function prepend_profile_file() {
+prepend_profile_file() {
     remove_all_matches "$1"
     sed -i.bak -e "1s;^;$2\n;" ~/.bash_profile && rm ~/.bash_profile.bak
 }
-function prepend_profile_file_2() {
+prepend_profile_file_2() {
     remove_matching_line ~/.bash_profile "$1"
     sed -i.bak -e "1s;^;$2\n;" ~/.bash_profile && rm ~/.bash_profile.bak
 }
-function append_profile_file() {
+append_profile_file() {
     remove_all_matches "$1"
-    echo $2 >> ~/.bash_profile
+    printf '%s\n' "$2" >> ~/.bash_profile
 }
-function prepend_global_profile_file() {
+append_zprofile() {
+    remove_matching_line ~/.zprofile "$1"
+    printf '%s\n' "$2" >> ~/.zprofile
+}
+prepend_global_profile_file() {
   sudo chmod u+w /etc/profile
   # TODO try to reuse remove_all_matches. Or can I reuse remove_matching_line?
   [ -f "/etc/profile" ] && sudo sed -i.bak -e "/$1/d" /etc/profile && sudo rm /etc/profile.bak
   sudo sed -i.bak -e "1s;^;$2\n;" /etc/profile && sudo rm /etc/profile.bak
 }
 
-function is_interactive_shell() {
-  [[ $- == *i* ]]
+non_interactive=
+target_shell=
+for arg in "$@"; do
+  case $arg in
+    --non-interactive) non_interactive=1 ;;
+    bash | zsh) target_shell=$arg ;;
+    *) echo "Usage: $0 [--non-interactive] [bash|zsh]" >&2; exit 1 ;;
+  esac
+done
+# The Git hook runs this script without a shell, so the last one chosen is remembered.
+if [ -z "$target_shell" ]; then
+  if [ -s ~/.jhlp_shell ]; then
+    target_shell=$(cat ~/.jhlp_shell)
+  else
+    target_shell=bash
+  fi
+fi
+echo "$target_shell" > ~/.jhlp_shell
+
+is_interactive() {
+  [ -z "$non_interactive" ] && [ -t 0 ]
+}
+is_bash() {
+  [ "$target_shell" = bash ]
 }
 
-if is_interactive_shell; then
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    if command -v apt &>/dev/null; then
+os=$(uname -s)
+
+if is_interactive; then
+  if [ "$os" = Linux ]; then
+    if command -v apt >/dev/null 2>&1; then
       sudo apt update -qq
       # TODO make the following less verbose carefully.
-      sudo apt install -qqq -y cron emacs-nox vim neovim curl jq xsel autossh 
-      
+      sudo apt install -qqq -y cron emacs-nox vim neovim curl jq xsel autossh
+
       # TODO look for a more precise way to detect that Rsyslog is active in this system.
       if [ -d /etc/rsyslog.d ]; then
         sudo tee /etc/rsyslog.d/99-ignore-cron-jobs-for-jhablutzel.conf > /dev/null <<EOF
@@ -63,8 +94,8 @@ EOF
         sudo systemctl restart rsyslog
       fi
     fi
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    if command -v brew &>/dev/null; then
+  elif [ "$os" = Darwin ]; then
+    if command -v brew >/dev/null 2>&1; then
       brew install -q jq autossh neovim
     fi
   fi
@@ -72,41 +103,49 @@ else
   echo "Not an interactive terminal. Not performing configuration that requires sudo."
 fi
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+DIR="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 
 ######
 # Shell configuration
-# TODO try to keep all shell configuration edits in blocks to make it easier to visually identify the configurations being managed from here or even better use dedicated files files and just source them, i.e. .bashrc_jh .bash_profile_jh. See https://superuser.com/a/224204/89031. Check if this might be somehow related too https://github.com/AlbanAndrieu/ansible-shell/blob/master/templates/.bashrc.j2.
+# TODO try to keep all shell configuration edits in blocks to make it easier to visually identify the configurations being managed from here or even better use dedicated files files and just source them, i.e. .jhlp_bashrc .jhlp_bash_profile. See https://superuser.com/a/224204/89031. Check if this might be somehow related too https://github.com/AlbanAndrieu/ansible-shell/blob/master/templates/.bashrc.j2.
 ######
-# TODO look for the way to prevent sourcing .bashrc if it has been already sourced with the code in the default .bash_profile.
-append_profile_file '^source "${HOME}\/.bashrc"' 'source "${HOME}/.bashrc"'
+if is_bash; then
+  # TODO look for the way to prevent sourcing .bashrc if it has been already sourced with the code in the default .bash_profile.
+  append_profile_file '^source "${HOME}\/.bashrc"' 'source "${HOME}/.bashrc"'
 
-# Set the window title to the hostname.
-# FIXME a combination of PROMPT_COMMAND and PS1 is making shell integration not working in the mac. Maybe remove these variables at this level if shell integration can help to configure them better. Anyway, consider support for Termius and iTerm2.
-append_bashrc 'then PROMPT_COMMAND=' 'if [ -n "$TMUX" ]; then PROMPT_COMMAND='"'"'echo -ne "\033Ptmux;\033\033]0;$(hostname -s)\007\033\\"'"'"'; else PROMPT_COMMAND='"'"'echo -ne "\033]0;$(hostname -s)\007"'"'"'; fi' 
+  # Set the window title to the hostname.
+  # FIXME a combination of PROMPT_COMMAND and PS1 is making shell integration not working in the mac. Maybe remove these variables at this level if shell integration can help to configure them better. Anyway, consider support for Termius and iTerm2.
+  append_bashrc 'then PROMPT_COMMAND=' 'if [ -n "$TMUX" ]; then PROMPT_COMMAND='"'"'echo -ne "\033Ptmux;\033\033]0;$(hostname -s)\007\033\\"'"'"'; else PROMPT_COMMAND='"'"'echo -ne "\033]0;$(hostname -s)\007"'"'"'; fi'
 
-# TODO confirm that the colors (including the random ones) for the prompt are really compatible across terminals in different systems: macOS, multiple Linux servers, Linux for Desktop, Termius for iOS and Desktop, etc.
-# TODO Look for the way to root sessions to be prompted in a different color to reflect warning, e.g. all the prompt could be painted in red.
-# TODO check why are two backslashes apparently required before $ while it isn't required for the other escapes as \n. Check TLCL on this.
-# TODO try to print the exit code of the previous command while maintaining the previous command exit code in $? in case the user wants to do "echo $?".
-if [ -f ~/.bash_jh_prompt_color ]; then
-  random_color=$(cat ~/.bash_jh_prompt_color)
+  # TODO confirm that the colors (including the random ones) for the prompt are really compatible across terminals in different systems: macOS, multiple Linux servers, Linux for Desktop, Termius for iOS and Desktop, etc.
+  # TODO Look for the way to root sessions to be prompted in a different color to reflect warning, e.g. all the prompt could be painted in red.
+  # TODO check why are two backslashes apparently required before $ while it isn't required for the other escapes as \n. Check TLCL on this.
+  # TODO try to print the exit code of the previous command while maintaining the previous command exit code in $? in case the user wants to do "echo $?".
+  # Migrating the file from its previous name.
+  if [ -f ~/.bash_jh_prompt_color ] && [ ! -f ~/.jhlp_bash_prompt_color ]; then
+    mv ~/.bash_jh_prompt_color ~/.jhlp_bash_prompt_color
+  fi
+  if [ -f ~/.jhlp_bash_prompt_color ]; then
+    random_color=$(cat ~/.jhlp_bash_prompt_color)
+  else
+    random_color=$(awk 'BEGIN { srand(); print 31 + int(rand() * 6) }')
+    echo $random_color > ~/.jhlp_bash_prompt_color
+  fi
+  # Based on the defaults in Debian 11 (/etc/skel/.bashrc).
+  append_bashrc '^PS1=' 'PS1="\[\033[01;'$random_color'm\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "'
+
+  # Aliases, commands in bin/, and Bash-only functions. It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use our own file just to keep it agnostic from every different distribution.
+  append_bashrc 'jhlp_bashrc' "test -s ~/.jaime-hablutzel-linux-profile/jhlp_bashrc && . ~/.jaime-hablutzel-linux-profile/jhlp_bashrc || true"
+  test -s ~/.bash_aliases && echo "WARNING: .bash_aliases already exists. Check if there are old definitions to delete there."
+  test -s ~/.alias && echo "WARNING: .alias already exists. Manually check if there are old definitions to delete there."
 else
-  random_color=$(( 31 + ( RANDOM % 6 )))
-  echo $random_color > ~/.bash_jh_prompt_color
+  # Aliases, commands in bin/ and the rest of the zsh configuration.
+  zshrc_line='[ -f ~/.jaime-hablutzel-linux-profile/jhlp_zshrc ] && source ~/.jaime-hablutzel-linux-profile/jhlp_zshrc'
+  touch ~/.zshrc
+  grep -qxF "$zshrc_line" ~/.zshrc || printf '%s\n' "$zshrc_line" >> ~/.zshrc
 fi
-# Based on the defaults in Debian 11 (/etc/skel/.bashrc).
-append_bashrc '^PS1=' 'PS1="\[\033[01;'$random_color'm\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "'
 
-# Updating aliases. It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use .bash_aliases_jh just to keep it agnostic from every different distribution.
-cp $DIR/.bash_aliases_jh ~/.bash_aliases_jh
-cp $DIR/.bash_aliases_jh_crypto ~/.bash_aliases_jh_crypto
-. ~/.bash_aliases_jh
-append_bashrc '\.bash_aliases_jh' "test -s ~/.bash_aliases_jh && . ~/.bash_aliases_jh || true"
-test -s ~/.bash_aliases && echo "WARNING: .bash_aliases already exists. Check if there are old definitions to delete there."
-test -s ~/.alias && echo "WARNING: .alias already exists. Manually check if there are old definitions to delete there."
-
-# TODO instead of overwritting ~/.emacs, evaluate to just include a file like ~/.emacs_jh from it, so it is still possible to customize Emacs settings in each server.
+# TODO instead of overwritting ~/.emacs, evaluate to just include a file like ~/.jhlp_emacs from it, so it is still possible to customize Emacs settings in each server.
 cp $DIR/.emacs ~/.emacs
 
 # Vim.
@@ -121,92 +160,107 @@ cp $DIR/init.vim ~/.config/nvim/init.vim
 # windsurf.vim
 ######
 # TODO compare against https://github.com/Exafunction/windsurf.nvim, which apparently is native to Neovim.
-if is_interactive_shell && [ ! -d ~/.config/nvim/pack/Exafunction/start/windsurf.vim ]; then
+if is_interactive && [ ! -d ~/.config/nvim/pack/Exafunction/start/windsurf.vim ]; then
   echo "Do you want to install the windsurf.vim plugin for Neovim? (y/n)"
-  read -r
+  read -r reply
   echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    # TODO instead of cron to keep the repository updated, evaluate an installation alternative with support for automatic updates, e.g. by using a plugin manager like lazy.nvim
-    git clone https://github.com/Exafunction/windsurf.vim ~/.config/nvim/pack/Exafunction/start/windsurf.vim
-    # TODO try to prompt for log in to Windsurf immediately after installing it.
-  fi
+  case $reply in
+    [Yy])
+      # TODO instead of cron to keep the repository updated, evaluate an installation alternative with support for automatic updates, e.g. by using a plugin manager like lazy.nvim
+      git clone https://github.com/Exafunction/windsurf.vim ~/.config/nvim/pack/Exafunction/start/windsurf.vim
+      # TODO try to prompt for log in to Windsurf immediately after installing it.
+      ;;
+  esac
 fi
 
-# Default editor
-# TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc (where these variables might not require to be exported). See https://unix.stackexchange.com/a/129144/11564.
-append_profile_file 'export VISUAL' 'export VISUAL=vim; export EDITOR="$VISUAL"; export GIT_EDITOR="$VISUAL"'
+if is_bash; then
+  # Default editor
+  # TODO confirm that the profile file is the more correct place to set the EDITOR, e.g. instead of .bashrc (where these variables might not require to be exported). See https://unix.stackexchange.com/a/129144/11564.
+  append_profile_file 'export VISUAL' 'export VISUAL=vim; export EDITOR="$VISUAL"; export GIT_EDITOR="$VISUAL"'
 
-# Less customizations
-# Case-insensitive search by default.
-append_profile_file 'export LESS' 'export LESS="-i -R"'
-# UTF-8 charset for Less
-append_profile_file 'export LESSCHARSET' 'export LESSCHARSET=utf-8'
+  # Less customizations
+  # Case-insensitive search by default.
+  append_profile_file 'export LESS' 'export LESS="-i -R"'
+  # UTF-8 charset for Less
+  append_profile_file 'export LESSCHARSET' 'export LESSCHARSET=utf-8'
+fi
 
-if is_interactive_shell && [ -z "$JHLP_NO_MULTIPLEXER" ] && ( ! command -v tmux &>/dev/null || ! command -v screen &>/dev/null ); then
+if is_interactive && [ -z "$JHLP_NO_MULTIPLEXER" ] && ( ! command -v tmux >/dev/null 2>&1 || ! command -v screen >/dev/null 2>&1 ); then
   echo "Do you want to set up a multiplexer (tmux or screen)? (y/n)"
-  read -r
+  read -r reply
   echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-      if command -v apt &>/dev/null; then
-        sudo apt install -qqq -y tmux screen
-      elif command -v dnf &>/dev/null; then
-        sudo dnf -y install tmux screen
+  case $reply in
+    [Yy])
+      if [ "$os" = Linux ]; then
+        if command -v apt >/dev/null 2>&1; then
+          sudo apt install -qqq -y tmux screen
+        elif command -v dnf >/dev/null 2>&1; then
+          sudo dnf -y install tmux screen
+        fi
+      elif [ "$os" = Darwin ]; then
+        if command -v brew >/dev/null 2>&1; then
+          brew install -q tmux
+        fi
       fi
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-      if command -v brew &>/dev/null; then
-        brew install -q tmux
+      ;;
+    *)
+      export JHLP_NO_MULTIPLEXER=1
+      if is_bash; then
+        append_profile_file 'export JHLP_NO_MULTIPLEXER' 'export JHLP_NO_MULTIPLEXER=1'
+      else
+        append_zprofile 'export JHLP_NO_MULTIPLEXER' 'export JHLP_NO_MULTIPLEXER=1'
       fi
-    fi
-  else
-    export JHLP_NO_MULTIPLEXER=1
-    append_profile_file 'export JHLP_NO_MULTIPLEXER' 'export JHLP_NO_MULTIPLEXER=1'
-  fi
+      ;;
+  esac
 fi
 # Multiplexers setup: Starting tmux or screen automatically on login
 cp $DIR/.tmux.conf ~/.tmux.conf
-append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then tmux new-session -A -s main; fi'
-# TODO try to include a custom ~/.screenrc_jh from the main ~/.screenrc instead of overwriting
+if is_bash; then
+  append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then tmux new-session -A -s main; fi'
+fi
+# TODO try to include a custom ~/.jhlp_screenrc from the main ~/.screenrc instead of overwriting
 # TODO maybe indicate/warn if this file was "updated" or "overwritten"
 cp $DIR/.screenrc ~/.screenrc
-append_profile_file 'screen -R' 'if [ -n "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then screen -R; fi'
+if is_bash; then
+  append_profile_file 'screen -R' 'if [ -n "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then screen -R; fi'
 
-# Removing remnants of: Close Bash sessions after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity.
-remove_all_matches '^BASH_IDLE_SESSION_TIMEOUT='
-remove_all_matches 'unset TMOUT'
+  # Removing remnants of: Close Bash sessions after $BASH_IDLE_SESSION_TIMEOUT seconds of inactivity.
+  remove_all_matches '^BASH_IDLE_SESSION_TIMEOUT='
+  remove_all_matches 'unset TMOUT'
 
-# START OF: Infinite Bash history
-# TODO try to simplify the following around infinite Bash history. Possibly the histappend and edits to /etc/profile are not needed.
-# We are putting the HIST* variables at the beginning of ~/.bash_profile given that it is the first file that is sourced when a new login shell is started and it is important to ensure that these variables are set before anything else, otherwise an error later during initialization could produce unintended history truncation, e.g. it has been observed that if the Bash completion initialization hangs forever (e.g. when Docker is set to a non-available context), if the HIST* variables are not already set, when the terminal is closed, truncation to the default 500 lines occurs for the Bash history file.
-prepend_profile_file_2 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
-# About the "DUMMY" value, see https://superuser.com/questions/1446920/setting-bash-history-sizes-to-1-clears-the-history.
-prepend_profile_file_2 'HISTSIZE=' "HISTSIZE='DUMMY'"
-prepend_profile_file_2 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
-# The previous HIST* variables apparently are not enough to guarantee history is never truncated. Now testing the following. See https://git.savannah.gnu.org/cgit/bash.git/tree/bashhist.c?h=bash-5.2#n159
-prepend_profile_file_2 "shopt -s histappend" "shopt -s histappend"
+  # START OF: Infinite Bash history
+  # TODO try to simplify the following around infinite Bash history. Possibly the histappend and edits to /etc/profile are not needed.
+  # We are putting the HIST* variables at the beginning of ~/.bash_profile given that it is the first file that is sourced when a new login shell is started and it is important to ensure that these variables are set before anything else, otherwise an error later during initialization could produce unintended history truncation, e.g. it has been observed that if the Bash completion initialization hangs forever (e.g. when Docker is set to a non-available context), if the HIST* variables are not already set, when the terminal is closed, truncation to the default 500 lines occurs for the Bash history file.
+  prepend_profile_file_2 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
+  # About the "DUMMY" value, see https://superuser.com/questions/1446920/setting-bash-history-sizes-to-1-clears-the-history.
+  prepend_profile_file_2 'HISTSIZE=' "HISTSIZE='DUMMY'"
+  prepend_profile_file_2 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
+  # The previous HIST* variables apparently are not enough to guarantee history is never truncated. Now testing the following. See https://git.savannah.gnu.org/cgit/bash.git/tree/bashhist.c?h=bash-5.2#n159
+  prepend_profile_file_2 "shopt -s histappend" "shopt -s histappend"
 
-# The .bashrc configuration has been observed required, otherwise, opening a non-login bash immediately truncates the history.
-prepend_bashrc_2 "HISTCONTROL=" "HISTCONTROL=ignoreboth"
-prepend_bashrc_2 "HISTSIZE=" "HISTSIZE='DUMMY'"
-prepend_bashrc_2 "HISTFILESIZE=" "HISTFILESIZE='DUMMY'"
-prepend_bashrc_2 "shopt -s histappend" "shopt -s histappend"
+  # The .bashrc configuration has been observed required, otherwise, opening a non-login bash immediately truncates the history.
+  prepend_bashrc_2 "HISTCONTROL=" "HISTCONTROL=ignoreboth"
+  prepend_bashrc_2 "HISTSIZE=" "HISTSIZE='DUMMY'"
+  prepend_bashrc_2 "HISTFILESIZE=" "HISTFILESIZE='DUMMY'"
+  prepend_bashrc_2 "shopt -s histappend" "shopt -s histappend"
 
-# Extra effort to configure the Bash history to never truncate by setting the configuration as early as possible. Being done only for macOS as the truncation has been being observed randomly only in this OS.
-# TODO eventually remove the redundancy this is currently introducing.
-if is_interactive_shell && [[ "$OSTYPE" == "darwin"* ]]; then
-  prepend_global_profile_file 'shopt -s histappend' 'shopt -s histappend'
-  prepend_global_profile_file 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
-  prepend_global_profile_file 'HISTSIZE=' "HISTSIZE='DUMMY'"
-  prepend_global_profile_file 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
+  # Extra effort to configure the Bash history to never truncate by setting the configuration as early as possible. Being done only for macOS as the truncation has been being observed randomly only in this OS.
+  # TODO eventually remove the redundancy this is currently introducing.
+  if is_interactive && [ "$os" = Darwin ]; then
+    prepend_global_profile_file 'shopt -s histappend' 'shopt -s histappend'
+    prepend_global_profile_file 'HISTFILESIZE=' "HISTFILESIZE='DUMMY'"
+    prepend_global_profile_file 'HISTSIZE=' "HISTSIZE='DUMMY'"
+    prepend_global_profile_file 'HISTCONTROL=' 'HISTCONTROL=ignoreboth'
+  fi
+  # END OF: Infinite Bash history
+
+  # The results of history substitution are not immediately passed to the shell parser.
+  append_bashrc "shopt -s histverify" "shopt -s histverify"
+
+  # TODO when creating .jhlp_bashrc, evaluate to allow my customizations to run only once by using a variable like $JHLP_BASHRC_LOADED, but maybe there is no real problem with allowing my .bashrc configurations to load several times.
+
+  append_bashrc "stty -ixon" "[[ -t 0 ]] && stty -ixon"
 fi
-# END OF: Infinite Bash history
-
-# The results of history substitution are not immediately passed to the shell parser.
-append_bashrc "shopt -s histverify" "shopt -s histverify"
-
-# TODO when creating .bashrc_jh, evaluate to allow my customizations to run only once by using a variable like $JHLP_BASHRC_LOADED, but maybe there is no real problem with allowing my .bashrc configurations to load several times.
-
-append_bashrc "stty -ixon" "[[ -t 0 ]] && stty -ixon"
 
 #######
 # Updating authorized SSH keys
@@ -228,8 +282,8 @@ git config --global user.email "hablutzel1@gmail.com"
 git config --global core.autocrlf input
 
 git_global_ignore() {
-  local ignore_file="$HOME/.config/git/ignore"
-  local line_to_add="$1"
+  ignore_file="$HOME/.config/git/ignore"
+  line_to_add="$1"
 
   if [ -f "$ignore_file" ]; then
     if ! grep -q "^$line_to_add$" "$ignore_file"; then
@@ -273,7 +327,7 @@ rm -f $tmpcronfile
 # Uninstall old Codex CLI configuration
 #####
 if [ -d ~/.codex-cli ]; then
-  source ~/.codex-cli/scripts/bash_cleanup.sh
+  bash ~/.codex-cli/scripts/bash_cleanup.sh
   rm -rf ~/.codex-cli
 fi
 
@@ -285,5 +339,12 @@ rm -rf ~/.chatgpt-shell-cli
 remove_all_matches 'export COLUMNS'
 remove_all_matches 'export OPENAI_KEY'
 remove_all_matches 'export JHLP_NO_CHATGPT_SHELL_CLI'
+
+#####
+# Remove the copies of the old alias files, replaced by jhlp_aliases, bin/ and lib/
+# Keep it even though it should be required only once per host as cleanup.
+#####
+rm -f ~/.bash_aliases_jh ~/.bash_aliases_jh_crypto
+remove_all_matches '\.bash_aliases_jh'
 
 echo "Jaime Hablutzel's configuration applied."

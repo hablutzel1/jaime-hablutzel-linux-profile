@@ -6,11 +6,13 @@ Start downloading repo with:
 git clone https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git ~/.jaime-hablutzel-linux-profile
 ```
 
-Now, to configure the profile execute:
+Now, to configure the profile for Bash (the default) or zsh, run it from any shell:
 
 ```
-source ~/.jaime-hablutzel-linux-profile/configure-profile
+~/.jaime-hablutzel-linux-profile/configure-profile [bash|zsh]
 ```
+
+The chosen shell is remembered in `~/.jhlp_shell` for the automatic runs after every pull. Open a new terminal to load the changes.
 
 # TODOS #
 

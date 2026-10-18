@@ -1,32 +1,13 @@
-# TODO check if it wouldn't be a good idea to unalias/unset everything beforehand to be able to overwrite possibly existing aliases or functions, e.g. it has been observed that trying to define a function fails if an alias with the same name is already defined.
+# Functions run as commands through bin/jhlp-run. Keep them compatible with bash 3.2 (macOS /bin/bash).
 
 ###########################
 # General
 ###########################
-# TODO provide a 'reset_bash_initialization_files' function that leaves ~/.bash* only with the configuration managed by this project (do not forget anyway that some systems might have profile defaults in /etc/profile*, which means that this won't guarantee a completely uniform Bash experience across different types of systems). This reset could possibly be performed by simply deleting several of these files and then recreating them. Just let .old backups for the originals. Considering that there might already be customizations in these files required for specific systems, the safest bet is to not perform this reset automatically.
 
 urlencode() { python -c "import urllib; print urllib.quote('''$1''', '')"; }
 
 # To allow to visually differentiate STDOUT from STDERR
 color() { "$@" 2>&1>&3|sed 's,.*,\x1B[31m&\x1B[0m,'>&2; } 3>&1
-
-alias diff='diff --color -u'
-
-# To become root preserving the environment. Note that the HOME env variable is being set to workaround a possible 'Defaults always_set_home' in /etc/sudoers, but it might have security implications (for example, in openSUSE Leap v15.1 the /etc/sudoers says the following: "Prevent environment variables from influencing programs in an unexpected or harmful way (CVE-2005-2959, CVE-2005-4158, CVE-2006-0151)" on top of that line).
-# TODO auto log out from root sessions.
-super() {
-history -a;
-/usr/bin/sudo -Es HOME=$HOME HISTCONTROL=$HISTCONTROL HISTSIZE=$HISTSIZE HISTFILESIZE=$HISTFILESIZE;
-history -r;
-}
-
-# This seems to be the default behavior that I want for sudo. For example, it allows to use my own Emacs settings when doing something like 'sudo emacs file'.
-sudo() {
-# Wrapping `/usr/bin/sudo` with history refreshes only for scenarios where something like `sudo bash` is to be executed.
-history -a;
-/usr/bin/sudo -E HOME=$HOME HISTCONTROL=$HISTCONTROL HISTSIZE=$HISTSIZE HISTFILESIZE=$HISTFILESIZE "$@";
-history -r;
-}
 
 mine () {
 # TODO prompt for confirmation if I'm outside my home folder.
@@ -38,13 +19,6 @@ else
   chown -R $SUDO_USER .
 fi
 }
-alias la="ls -la"
-alias lat="ls -lat"
-
-# Using autossh by default for automatic reconnections.
-if [ -x "$(command -v autossh)" ]; then
-  alias ssh="$(which autossh) -M 0"
-fi
 
 #########################
 # Clipboard management
@@ -72,63 +46,19 @@ copyfullpath() {
     echo "Full path copied to clipboard."
 }
 
-# An iTerm2 Trigger is expected to be set up for the output of this alias.
-alias n='echo processCompletedNotificationForITerm2!'
-
-############################
-# AI shell assistants
-############################
-# TODO study GitHub Copilot CLI that apparently allows to store executed commands in the shell history. From `echo $(github-copilot-cli alias -- "$0")`: copilot_gh-assist () { TMPFILE=$(mktemp); trap 'rm -f $TMPFILE' EXIT; if /opt/homebrew/bin/github-copilot-cli gh-assist "$@" --shellout $TMPFILE; then if [ -e "$TMPFILE" ]; then FIXED_CMD=$(cat $TMPFILE); history -s $(history 1 | cut -d' ' -f4-); history -s "$FIXED_CMD"; eval "$FIXED_CMD" else echo "Apologies! Extracting command failed" fi else return 1 fi }; alias 'gh?'='copilot_gh-assist';
-
 ###########################
 # iptables/firewall related
 ###########################
-# TODO check is it really good practice to put 'sudo' in aliases definitions?.
 function il {
 # TODO if we are already USER=root, do not execute with "sudo" as it is not required. Maybe extract a function like: "sudo_if_not_root" and use it in this entire file.
 sudo iptables -n -v --line-numbers -L $@
 }
-alias iln='sudo iptables -L -t nat -n -v --line-numbers '
-alias il6='sudo ip6tables -L -n -v --line-numbers'
-
-###########################
-# PVE hosts related
-###########################
-# TODO try to provide the default password too, i.e. 'secret'.
-# TODO check if the following $1 is really working as this technique didn't work for pem_certs being an alias.
-alias console="sudo pct console $1 -escape '^l'"
-
-###########################
-# Git repositories related, e.g. etckeeper
-###########################
-alias gs="git status -u"
-alias gsh="git show "
-alias gd="git diff"
-alias gds="git diff --staged"
-alias gl="git log --graph --all --decorate"
-alias gls="git log --graph --all --decorate --name-status"
-alias gaa="git add -A"
-alias gc="git commit -m "
-# TODO check: maybe the following could be replaced by a proper Git alias. See https://stackoverflow.com/a/2419270/320594.
-alias gct="git add -A && git commit -m \"UNREVIEWED: Quick commit.\""
-alias gctp="gct; git push"
-alias ec="etckeeper commit "
-alias ect="etckeeper commit \"UNREVIEWED: Quick commit.\""
-alias etckeeper-pre-commit-disable="sudo mv /etc/.git/hooks/pre-commit /etc/.git/hooks/pre-commit.disabled"
-alias etckeeper-pre-commit-enable="sudo mv /etc/.git/hooks/pre-commit.disabled /etc/.git/hooks/pre-commit"
-
-###########################
-# screen related
-##########################
-alias sls="screen -ls"
-alias srd="screen -rd"
 
 ###########################
 # Crypto related
 ###########################
-source ~/.bash_aliases_jh_crypto
 
-# TODO gradually migrate all the following functions to ~/.bash_aliases_jh_crypto. Maybe keep some of the current aliases as shortcuts to the new functions.
+# TODO gradually migrate all the following functions to crypto.bash. Maybe keep some of the current aliases as shortcuts to the new functions.
 
 osslpemcerts() {
     if [ "$#" -eq 0 ]; then
@@ -147,11 +77,11 @@ crt_sh_pem_url_from_sha256() {
 # Since OpenSSL 3.0, the input encoding is detected automatically, so the -inform flag is not required anymore. See https://www.openssl.org/docs/man3.0/man1/openssl-format-options.html.
 osslcert() {
   local filenames=()
-  local temp_files=()  
+  local temp_files=()
   local default_options=(-noout -text)
   local extra_options=()
   local option_match_found=false
-  
+
   # TODO ensure it plays nice with filenames that contain spaces or the '-' character, so the match for '-' below should always search for a preceding space. Should it look for the start of a word as well?
   for arg in "$@"; do
     if [[ "$arg" == -* ]]; then
@@ -202,7 +132,7 @@ osslcert() {
 
 # Encoding enforcing versions.
 osslpemcert() {
-    osslcert "$@" -inform PEM    
+    osslcert "$@" -inform PEM
 }
 ossldercert() {
   osslcert "$@" -inform DER
@@ -249,15 +179,31 @@ osslcertordered() {
 
   local IFS=$'\n'
   ext_name_start_chars='[a-zA-Z0-9]'
-  declare -A ext_contents_map
+  # Parallel arrays instead of an associative array, which bash 3.2 lacks. A repeated name replaces the earlier content.
+  local ext_names=() ext_contents=() ext_key i found
   for ext in $(echo "$original_extensions" | grep -E "^ {12}$ext_name_start_chars"); do
     ext_content=$(echo "$original_extensions" | sed -n "/$ext/,/^            $ext_name_start_chars/p")
     IFS= read -rd '' ext_content < <(echo "$ext_content" | sed '$d')
-    ext_contents_map["$(echo "$ext" | sed -e 's/[[:space:]]//g')"]="$ext_content"
+    ext_key="$(echo "$ext" | sed -e 's/[[:space:]]//g')"
+    found=false
+    for i in "${!ext_names[@]}"; do
+      if [ "${ext_names[$i]}" = "$ext_key" ]; then
+        ext_contents[$i]="$ext_content"
+        found=true
+      fi
+    done
+    if ! $found; then
+      ext_names+=("$ext_key")
+      ext_contents+=("$ext_content")
+    fi
   done
   sorted_extensions=""
-  for ext in $(echo "${!ext_contents_map[@]}" | tr ' ' '\n' | sort -V); do
-    sorted_extensions="$sorted_extensions${ext_contents_map[$ext]}"
+  for ext in $(printf '%s\n' "${ext_names[@]}" | sort -V); do
+    for i in "${!ext_names[@]}"; do
+      if [ "${ext_names[$i]}" = "$ext" ]; then
+        sorted_extensions="$sorted_extensions${ext_contents[$i]}"
+      fi
+    done
   done
 
   echo "$before_extensions"

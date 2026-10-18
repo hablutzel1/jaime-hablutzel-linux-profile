@@ -1,0 +1,17 @@
+# Managed by jaime-hablutzel-linux-profile and sourced from ~/.zshrc.
+# TODO gradually port the rest of the Bash configuration: prompt and window title, infinite history, multiplexer autostart.
+
+case ":$PATH:" in
+  *":$HOME/.jaime-hablutzel-linux-profile/bin:"*) ;;
+  *) export PATH="$HOME/.jaime-hablutzel-linux-profile/bin:$PATH" ;;
+esac
+
+source ~/.jaime-hablutzel-linux-profile/jhlp_aliases
+
+export VISUAL=vim EDITOR=vim GIT_EDITOR=vim
+export LESS="-i -R" LESSCHARSET=utf-8
+
+[[ -t 0 ]] && stty -ixon
+
+# zsh switches to vi line editing when VISUAL or EDITOR contains "vi". Keep the emacs mode, as in Bash.
+bindkey -e

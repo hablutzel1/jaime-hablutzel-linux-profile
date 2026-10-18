@@ -1,0 +1,64 @@
+# Aliases for every POSIX shell (bash, zsh, ...). Sourced from jhlp_bashrc and jhlp_zshrc.
+# TODO check if it wouldn't be a good idea to unalias/unset everything beforehand to be able to overwrite possibly existing aliases or functions, e.g. it has been observed that trying to define a function fails if an alias with the same name is already defined.
+
+###########################
+# General
+###########################
+# TODO provide a 'reset_bash_initialization_files' function that leaves ~/.bash* only with the configuration managed by this project (do not forget anyway that some systems might have profile defaults in /etc/profile*, which means that this won't guarantee a completely uniform Bash experience across different types of systems). This reset could possibly be performed by simply deleting several of these files and then recreating them. Just let .old backups for the originals. Considering that there might already be customizations in these files required for specific systems, the safest bet is to not perform this reset automatically.
+
+alias diff='diff --color -u'
+
+alias la="ls -la"
+alias lat="ls -lat"
+
+# Using autossh by default for automatic reconnections.
+if [ -x "$(command -v autossh)" ]; then
+  alias ssh="$(which autossh) -M 0"
+fi
+
+# An iTerm2 Trigger is expected to be set up for the output of this alias.
+alias n='echo processCompletedNotificationForITerm2!'
+
+############################
+# AI shell assistants
+############################
+# TODO study GitHub Copilot CLI that apparently allows to store executed commands in the shell history. From `echo $(github-copilot-cli alias -- "$0")`: copilot_gh-assist () { TMPFILE=$(mktemp); trap 'rm -f $TMPFILE' EXIT; if /opt/homebrew/bin/github-copilot-cli gh-assist "$@" --shellout $TMPFILE; then if [ -e "$TMPFILE" ]; then FIXED_CMD=$(cat $TMPFILE); history -s $(history 1 | cut -d' ' -f4-); history -s "$FIXED_CMD"; eval "$FIXED_CMD" else echo "Apologies! Extracting command failed" fi else return 1 fi }; alias 'gh?'='copilot_gh-assist';
+
+###########################
+# iptables/firewall related
+###########################
+# TODO check is it really good practice to put 'sudo' in aliases definitions?.
+alias iln='sudo iptables -L -t nat -n -v --line-numbers '
+alias il6='sudo ip6tables -L -n -v --line-numbers'
+
+###########################
+# PVE hosts related
+###########################
+# TODO try to provide the default password too, i.e. 'secret'.
+# TODO check if the following $1 is really working as this technique didn't work for pem_certs being an alias.
+alias console="sudo pct console $1 -escape '^l'"
+
+###########################
+# Git repositories related, e.g. etckeeper
+###########################
+alias gs="git status -u"
+alias gsh="git show "
+alias gd="git diff"
+alias gds="git diff --staged"
+alias gl="git log --graph --all --decorate"
+alias gls="git log --graph --all --decorate --name-status"
+alias gaa="git add -A"
+alias gc="git commit -m "
+# TODO check: maybe the following could be replaced by a proper Git alias. See https://stackoverflow.com/a/2419270/320594.
+alias gct="git add -A && git commit -m \"UNREVIEWED: Quick commit.\""
+alias gctp="gct; git push"
+alias ec="etckeeper commit "
+alias ect="etckeeper commit \"UNREVIEWED: Quick commit.\""
+alias etckeeper-pre-commit-disable="sudo mv /etc/.git/hooks/pre-commit /etc/.git/hooks/pre-commit.disabled"
+alias etckeeper-pre-commit-enable="sudo mv /etc/.git/hooks/pre-commit.disabled /etc/.git/hooks/pre-commit"
+
+###########################
+# screen related
+##########################
+alias sls="screen -ls"
+alias srd="screen -rd"

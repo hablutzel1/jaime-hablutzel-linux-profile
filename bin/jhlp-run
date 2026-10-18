@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Every other file in this directory is a symlink to this script. It runs the function of ../lib/*.bash named like the symlink it was invoked through.
+for lib in "$(dirname "$0")"/../lib/*.bash; do
+  . "$lib"
+done
+"$(basename "$0")" "$@"

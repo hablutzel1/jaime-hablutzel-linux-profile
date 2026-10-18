@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+# Functions run as commands through bin/jhlp-run. Keep them compatible with bash 3.2 (macOS /bin/bash).
 
 __jh_debug() {
-    if [[ "${JH_DEBUG:-0}" == "1" ]]; then
+    if [[ "${JHLP_DEBUG:-0}" == "1" ]]; then
         # TODO check if possible not to mess with STDERR but use an additional descriptor dedicated for this purpose. Just to avoid conflicts with other possible legit uses of STDERR
         echo "$1" >&2
     fi
