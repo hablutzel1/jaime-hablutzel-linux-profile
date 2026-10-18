@@ -1,5 +1,6 @@
 #!/bin/sh
-./configure-profile --non-interactive
+# Through sh, so it doesn't depend on the execute bit, e.g. with core.fileMode=false.
+sh ./configure-profile --non-interactive
 
 # TODO try to apply the changes immediately in all opened tmux panes. Maybe by simply sourcing configure-profile in all panes using `tmux send-keys`? Though it would end up executing configure-profile multiple times, no? Is it safe? Maybe a semaphore/lock could be required to be implemented to prevent unsafe concurrent executions of configure-profile. Anyway, a warning should be still issued (at least to one terminal) as simply sourcing configure-profile isn't currently leaving the shell in a fully updated state, e.g. code like prepend_profile_file 'HISTCONTROL=' 'HISTCONTROL=ignoreboth' which isn't effective right away. 
 # TODO in addition to the previous, even if it gets possible to automatically apply the updated configuration to all existing terminals, create an alias, something like `rt` (refresh terminal) that could be used to immediately apply incoming changes instead of waiting for the cron job that updates the project every 5 minutes. This will be useful when the profile configuration is modified in one machine and we want to have the same configuration in another machine immediately.

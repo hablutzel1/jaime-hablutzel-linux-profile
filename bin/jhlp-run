@@ -3,4 +3,10 @@
 for lib in "$(dirname "$0")"/../lib/*.bash; do
   . "$lib"
 done
-"$(basename "$0")" "$@"
+name=$(basename "$0")
+# Without a function of that name, bash would find this same symlink on PATH and call itself endlessly.
+if [ "$(type -t "$name")" != function ]; then
+  echo "jhlp-run: no function named $name in lib/" >&2
+  exit 127
+fi
+"$name" "$@"
