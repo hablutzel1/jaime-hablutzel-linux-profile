@@ -7,6 +7,11 @@ esac
 
 . ~/.jaime-hablutzel-linux-profile/jhlp_aliases
 
+# Timestamp the history. On hosts where /etc/profile.d already sets this read-only, keep
+# theirs; otherwise set our own (matching their format), so non-login panes that skip
+# /etc/profile.d still record and show history timestamps.
+readonly -p 2>/dev/null | grep -q ' HISTTIMEFORMAT=' || export HISTTIMEFORMAT='%FT%T%z '
+
 # To become root preserving the environment. Note that the HOME env variable is being set to workaround a possible 'Defaults always_set_home' in /etc/sudoers, but it might have security implications (for example, in openSUSE Leap v15.1 the /etc/sudoers says the following: "Prevent environment variables from influencing programs in an unexpected or harmful way (CVE-2005-2959, CVE-2005-4158, CVE-2006-0151)" on top of that line).
 # TODO auto log out from root sessions.
 jh_super() {

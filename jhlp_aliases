@@ -8,6 +8,12 @@
 
 alias diff='diff --color -u'
 
+# Drop any inherited TMOUT so interactive panes don't auto-log-out. In a non-login pane
+# TMOUT is inherited as a writable variable (the read-only attribute set by
+# /etc/profile.d does not survive exec), so this succeeds; in a login shell where it is
+# read-only the attempt is silently ignored. Both bash and zsh honour TMOUT.
+unset TMOUT 2>/dev/null || true
+
 alias jh_la="ls -la"
 alias jh_lat="ls -lat"
 
