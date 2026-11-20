@@ -171,21 +171,18 @@ else
   grep -qxF "$zshrc_line" ~/.zshrc || printf '%s\n' "$zshrc_line" >> ~/.zshrc
 fi
 
-# Minimal mode keeps only Vim, dropping the Emacs and Neovim configs.
+# Editor configs are copied in every mode: they are inert plain files (no package, no
+# sudo), ready in case the editor is later installed on the host.
 # TODO instead of overwritting ~/.emacs, evaluate to just include a file like ~/.jhlp_emacs from it, so it is still possible to customize Emacs settings in each server.
-if ! is_minimal; then
-  cp $DIR/.emacs ~/.emacs
-fi
+cp $DIR/.emacs ~/.emacs
 
 # Vim.
 # See the TODOS for the similar .emacs.
 cp $DIR/.vimrc ~/.vimrc
 
 # Neovim.
-if ! is_minimal; then
-  mkdir -p ~/.config/nvim
-  cp $DIR/init.vim ~/.config/nvim/init.vim
-fi
+mkdir -p ~/.config/nvim
+cp $DIR/init.vim ~/.config/nvim/init.vim
 
 if is_bash; then
   # Default editor
