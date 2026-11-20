@@ -68,7 +68,7 @@ if [ -z "$target_shell" ]; then
   fi
 fi
 echo "$target_shell" > ~/.jhlp_shell
-# Minimal mode, for shared hosts (e.g. SSL.com): configure only my home directory, run
+# Minimal mode, for shared or multi-user hosts: configure only my home directory, run
 # no sudo, install no packages, never touch authorized_keys, and add no auto-update cron.
 # Remembered in ~/.jhlp_minimal like the shell, so the post-merge hook's re-run stays minimal.
 if [ -z "$minimal" ] && [ -f ~/.jhlp_minimal ]; then
