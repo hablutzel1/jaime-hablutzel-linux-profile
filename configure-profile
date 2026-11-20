@@ -1,5 +1,5 @@
 #!/bin/sh
-# Usage: configure-profile [--non-interactive] [bash|zsh]
+# Usage: configure-profile [--non-interactive] [--minimal] [bash|zsh]
 # POSIX sh, so it runs the same from any shell. Run it, don't source it.
 
 # TODO check if Augeas can be used for the following purpose as it apparently could preserve formatting and location of edit. See https://stackoverflow.com/a/50323373/320594.
@@ -50,11 +50,13 @@ prepend_global_profile_file() {
 
 non_interactive=
 target_shell=
+minimal=
 for arg in "$@"; do
   case $arg in
     --non-interactive) non_interactive=1 ;;
+    --minimal) minimal=1 ;;
     bash | zsh) target_shell=$arg ;;
-    *) echo "Usage: $0 [--non-interactive] [bash|zsh]" >&2; exit 1 ;;
+    *) echo "Usage: $0 [--non-interactive] [--minimal] [bash|zsh]" >&2; exit 1 ;;
   esac
 done
 # The Git hook runs this script without a shell, so the last one chosen is remembered.
@@ -66,6 +68,15 @@ if [ -z "$target_shell" ]; then
   fi
 fi
 echo "$target_shell" > ~/.jhlp_shell
+# Minimal mode, for shared hosts (e.g. SSL.com): configure only my home directory, run
+# no sudo, install no packages, never touch authorized_keys, and add no auto-update cron.
+# Remembered in ~/.jhlp_minimal like the shell, so the post-merge hook's re-run stays minimal.
+if [ -z "$minimal" ] && [ -f ~/.jhlp_minimal ]; then
+  minimal=1
+fi
+if [ -n "$minimal" ]; then
+  touch ~/.jhlp_minimal
+fi
 
 is_interactive() {
   [ -z "$non_interactive" ] && [ -t 0 ]
@@ -73,10 +84,15 @@ is_interactive() {
 is_bash() {
   [ "$target_shell" = bash ]
 }
+is_minimal() {
+  [ -n "$minimal" ]
+}
 
 os=$(uname -s)
 
-if is_interactive; then
+if is_minimal; then
+  echo "Minimal mode. Not installing packages or touching system files."
+elif is_interactive; then
   if [ "$os" = Linux ]; then
     if command -v apt >/dev/null 2>&1; then
       sudo apt update -qq
@@ -111,7 +127,14 @@ DIR="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 ######
 if is_bash; then
   # TODO look for the way to prevent sourcing .bashrc if it has been already sourced with the code in the default .bash_profile.
-  append_profile_file '^source "${HOME}\/.bashrc"' 'source "${HOME}/.bashrc"'
+  if is_minimal; then
+    # On shared hosts keep the distro ~/.profile (its PATH additions, and any block an
+    # orchestration tool appends to it): source it, and it sources ~/.bashrc in turn.
+    # A bare ~/.bash_profile that sourced ~/.bashrc directly would make bash skip ~/.profile.
+    append_profile_file 'source "${HOME}\/.bashrc"' 'if [ -f "${HOME}/.profile" ]; then source "${HOME}/.profile"; else source "${HOME}/.bashrc"; fi'
+  else
+    append_profile_file 'source "${HOME}\/.bashrc"' 'source "${HOME}/.bashrc"'
+  fi
 
   # Set the window title to the hostname.
   # FIXME a combination of PROMPT_COMMAND and PS1 is making shell integration not working in the mac. Maybe remove these variables at this level if shell integration can help to configure them better. Anyway, consider support for Termius and iTerm2.
@@ -131,8 +154,9 @@ if is_bash; then
     random_color=$(awk 'BEGIN { srand(); print 31 + int(rand() * 6) }')
     echo $random_color > ~/.jhlp_bash_prompt_color
   fi
-  # Based on the defaults in Debian 11 (/etc/skel/.bashrc).
-  append_bashrc '^PS1=' 'PS1="\[\033[01;'$random_color'm\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "'
+  # Based on the defaults in Debian 11 (/etc/skel/.bashrc). Red when the user is root (my
+  # own ~/.bashrc is loaded for root too, e.g. through jh_super), otherwise my random colour.
+  append_bashrc 'PS1=' 'if [ "$(id -u)" = 0 ]; then PS1="\[\033[01;31m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "; else PS1="\[\033[01;'$random_color'm\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "; fi'
 
   # Aliases, commands in bin/, and Bash-only functions. It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use our own file just to keep it agnostic from every different distribution.
   append_bashrc 'jhlp_bashrc' "test -s ~/.jaime-hablutzel-linux-profile/jhlp_bashrc && . ~/.jaime-hablutzel-linux-profile/jhlp_bashrc || true"
@@ -145,16 +169,21 @@ else
   grep -qxF "$zshrc_line" ~/.zshrc || printf '%s\n' "$zshrc_line" >> ~/.zshrc
 fi
 
+# Minimal mode keeps only Vim, dropping the Emacs and Neovim configs.
 # TODO instead of overwritting ~/.emacs, evaluate to just include a file like ~/.jhlp_emacs from it, so it is still possible to customize Emacs settings in each server.
-cp $DIR/.emacs ~/.emacs
+if ! is_minimal; then
+  cp $DIR/.emacs ~/.emacs
+fi
 
 # Vim.
 # See the TODOS for the similar .emacs.
 cp $DIR/.vimrc ~/.vimrc
 
 # Neovim.
-mkdir -p ~/.config/nvim
-cp $DIR/init.vim ~/.config/nvim/init.vim
+if ! is_minimal; then
+  mkdir -p ~/.config/nvim
+  cp $DIR/init.vim ~/.config/nvim/init.vim
+fi
 
 if is_bash; then
   # Default editor
@@ -168,7 +197,7 @@ if is_bash; then
   append_profile_file 'export LESSCHARSET' 'export LESSCHARSET=utf-8'
 fi
 
-if is_interactive && [ -z "$JHLP_NO_MULTIPLEXER" ] && ( ! command -v tmux >/dev/null 2>&1 || ! command -v screen >/dev/null 2>&1 ); then
+if is_interactive && ! is_minimal && [ -z "$JHLP_NO_MULTIPLEXER" ] && ( ! command -v tmux >/dev/null 2>&1 || ! command -v screen >/dev/null 2>&1 ); then
   echo "Do you want to set up a multiplexer (tmux or screen)? (y/n)"
   read -r reply
   echo
@@ -248,12 +277,15 @@ fi
 #######
 # Updating authorized SSH keys
 #######
-mkdir -p ~/.ssh/
-cp $DIR/authorized_keys_global ~/.ssh/authorized_keys
-chmod 700 ~/.ssh
-chmod 600 ~/.ssh/authorized_keys
-if [ -f ~/.ssh/authorized_keys_host_specific ]; then
-    cat ~/.ssh/authorized_keys_host_specific >> ~/.ssh/authorized_keys
+# Minimal mode never touches authorized_keys: shared hosts manage their own (e.g. by Ansible).
+if ! is_minimal; then
+  mkdir -p ~/.ssh/
+  cp $DIR/authorized_keys_global ~/.ssh/authorized_keys
+  chmod 700 ~/.ssh
+  chmod 600 ~/.ssh/authorized_keys
+  if [ -f ~/.ssh/authorized_keys_host_specific ]; then
+      cat ~/.ssh/authorized_keys_host_specific >> ~/.ssh/authorized_keys
+  fi
 fi
 
 ####
@@ -288,19 +320,32 @@ ln -sf ../../git_hooks/post-merge $DIR/.git/hooks/post-merge
 ####
 # User crontab configuration
 ####
+# In minimal mode updates are a manual `git pull`, so we never add the 5-minute auto-pull
+# and never create a crontab; we only clean an existing profile line if there is one.
+if crontab -l >/dev/null 2>&1; then
+  had_crontab=1
+else
+  had_crontab=
+fi
 tmpcronfile=$(mktemp)
-crontab -l >"$tmpcronfile"
+crontab -l 2>/dev/null >"$tmpcronfile" || true
 sed -i.bak -e '/.jaime-hablutzel-linux-profile/d' $tmpcronfile && rm ${tmpcronfile}.bak
 # Keep the following lines even though they should be required only once per host as cleanup.
 sed -i.bak -e '/.codex-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
 sed -i.bak -e '/.chatgpt-shell-cli/d' $tmpcronfile && rm ${tmpcronfile}.bak
 sed -i.bak -e '/windsurf.vim/d' $tmpcronfile && rm ${tmpcronfile}.bak
-# TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
-echo >> $tmpcronfile
-# TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
-# TODO instead of supressing STDERR, evaluate to always send it to a Git ignored file under ~/.jaime-hablutzel-linux-profile/ to avoid totally losing possible errors like "fatal: unable to access 'https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git/': The requested URL returned error: 504".
-echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
-crontab $tmpcronfile
+if ! is_minimal; then
+  # TODO instead of keep adding preceding newlines, just verify that the file is terminated in a new line before appending the command.
+  echo >> $tmpcronfile
+  # TODO check better the -q and STDERR supression for "git pull", e.g. it has been observed that the "echo"s in the current file are being output to STDERR when ran as part of the Git hook execution, but is this the expected behavior?.
+  # TODO instead of supressing STDERR, evaluate to always send it to a Git ignored file under ~/.jaime-hablutzel-linux-profile/ to avoid totally losing possible errors like "fatal: unable to access 'https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git/': The requested URL returned error: 504".
+  echo "*/5 * * * * cd ~/.jaime-hablutzel-linux-profile/ && git pull -q 2>/dev/null" >> $tmpcronfile
+fi
+# Apply only when a crontab already existed, or when we added our line (non-minimal), so
+# minimal mode on a host with no crontab does not create an empty one.
+if [ -n "$had_crontab" ] || ! is_minimal; then
+  crontab $tmpcronfile
+fi
 rm -f $tmpcronfile
 
 #####
