@@ -17,5 +17,5 @@ history -r;
 
 # This seems to be the default behavior that I want for sudo. For example, it allows to use my own Emacs settings when doing something like 'sudo emacs file'.
 sudo() {
-/usr/bin/sudo -E HOME=$HOME HISTCONTROL=$HISTCONTROL HISTSIZE=$HISTSIZE HISTFILESIZE=$HISTFILESIZE "$@"
+/usr/bin/sudo -E HOME=$HOME "$@"
 }
