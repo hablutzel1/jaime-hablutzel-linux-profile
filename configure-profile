@@ -156,7 +156,9 @@ if is_bash; then
   fi
   # Based on the defaults in Debian 11 (/etc/skel/.bashrc). Red when the user is root (my
   # own ~/.bashrc is loaded for root too, e.g. through jh_super), otherwise my random colour.
-  append_bashrc 'PS1=' 'if [ "$(id -u)" = 0 ]; then PS1="\[\033[01;31m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "; else PS1="\[\033[01;'$random_color'm\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "; fi'
+  # Match only my own unindented line, so the indented PS1 lines in the stock ~/.bashrc
+  # (inside its "if [ "$color_prompt" = yes ]" block) are left intact.
+  append_bashrc '^[^ ].*PS1=' 'if [ "$(id -u)" = 0 ]; then PS1="\[\033[01;31m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "; else PS1="\[\033[01;'$random_color'm\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "; fi'
 
   # Aliases, commands in bin/, and Bash-only functions. It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use our own file just to keep it agnostic from every different distribution.
   append_bashrc 'jhlp_bashrc' "test -s ~/.jaime-hablutzel-linux-profile/jhlp_bashrc && . ~/.jaime-hablutzel-linux-profile/jhlp_bashrc || true"
