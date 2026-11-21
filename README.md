@@ -9,10 +9,16 @@ git clone https://github.com/hablutzel1/jaime-hablutzel-linux-profile.git ~/.jai
 Now, to configure the profile for Bash (the default) or zsh, run it from any shell:
 
 ```
-~/.jaime-hablutzel-linux-profile/configure-profile [bash|zsh]
+~/.jaime-hablutzel-linux-profile/configure-profile [--non-interactive] [--minimal] [bash|zsh]
 ```
 
 The chosen shell is remembered in `~/.jhlp_shell` for the automatic runs after every pull. Open a new terminal to load the changes.
+
+## Options ##
+
+* `bash` | `zsh` — the shell to configure. Defaults to `bash`, or to the shell remembered in `~/.jhlp_shell` from a previous run.
+* `--minimal` — configure only my home directory, for shared or multi-user hosts: no `sudo`, no package installs, no changes to system files (`/etc/rsyslog.d`, `/etc/profile`), it never touches `~/.ssh/authorized_keys`, and it adds no auto-update cron (updates are then a manual `git pull`, which still re-runs this script through the `post-merge` hook). `~/.bash_profile` sources `~/.profile` (keeping the distro's own `~/.profile`) instead of `~/.bashrc` directly. Remembered in `~/.jhlp_minimal`, so the automatic runs after every pull stay minimal.
+* `--non-interactive` — skip anything that needs a prompt or a TTY (package installs, the multiplexer question). The `post-merge` hook uses this for the runs after every pull.
 
 # TODOS #
 
