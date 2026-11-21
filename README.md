@@ -20,6 +20,13 @@ The chosen shell is remembered in `~/.jhlp_shell` for the automatic runs after e
 * `--minimal` — configure only my home directory, for shared or multi-user hosts: no `sudo`, no package installs, no changes to system files (`/etc/rsyslog.d`, `/etc/profile`), it never touches `~/.ssh/authorized_keys`, and it adds no auto-update cron (instead, each interactive shell pulls in the background at most once an hour, and `jh_update_profile` pulls at once; either re-runs this script through the `post-merge` hook). `~/.bash_profile` sources `~/.profile` (keeping the distro's own `~/.profile`) instead of `~/.bashrc` directly. Remembered in `~/.jhlp_minimal`, so the automatic runs after every pull stay minimal.
 * `--non-interactive` — skip anything that needs a prompt or a TTY (package installs, the multiplexer question). The `post-merge` hook uses this for the runs after every pull.
 
+# Where a command goes #
+
+* `lib/*.bash` plus a `bin/<name>` symlink to `bin/jhlp-run`: every command that does not need to change the shell it is typed in. Written once in bash (3.2 compatible), it runs the same from bash, zsh, scripts, `sudo` and non-interactive SSH. This includes what would otherwise be an alias taking arguments.
+* `jhlp_aliases` (POSIX sh, sourced by bash and zsh): aliases, and functions that must change the current shell (`cd`, variables, history).
+* `jhlp_bashrc`: the same, when it needs bash, e.g. `jh_super`.
+* `jhlp_init`: code that runs at every shell startup, not on demand.
+
 # TODOS #
 
 * Evaluate to make this repository private (but does it really dangerously provide information about my environment?) while keeping it comfortable to use it from any place, even from third party infrastructure, maybe by generating quick read-only access keys for every server that it will be deployed to?. Another option for beginning would be just removing it from any public listing, if GitHub allows for this. Maybe it would be a good idea to publish it in a Blobfish's managed Git server, otherwise too much trust in being put in GitHub.

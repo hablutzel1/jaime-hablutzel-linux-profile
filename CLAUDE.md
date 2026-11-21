@@ -22,6 +22,16 @@ host within minutes.
   ask me before committing.
 - This file is public too.
 
+## Where a command goes
+
+- A command that does not need to change the shell it is typed in goes as a function in `lib/*.bash`
+  (bash 3.2 compatible), plus a symlink `bin/<name>` to `jhlp-run`. It then runs the same from bash,
+  zsh, scripts, `sudo` and non-interactive SSH.
+- A command that must change the current shell (`cd`, variables, history, aliases) goes in
+  `jhlp_aliases`, in POSIX sh, or in `jhlp_bashrc` when it needs bash, e.g. `jh_super`.
+- An alias that would need arguments in the middle (`$1`) is a function in `lib/*.bash` instead.
+- Code that runs at shell startup, not on demand, goes in `jhlp_init`.
+
 ## Commit and push every change
 
 Whenever you change any file in this repository, commit the change and push it right away to the
