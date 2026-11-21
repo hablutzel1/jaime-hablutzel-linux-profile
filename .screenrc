@@ -2,7 +2,7 @@ escape ^Hh
 defscrollback 10000
 # Start the shell as a non-login shell (no leading '-'), so it doesn't re-source
 # /etc/profile.d, which on some hosts sets a read-only TMOUT auto-logout. The window
-# inherits the parent login shell's exported environment, and jhlp_aliases/jhlp_bashrc
+# inherits the parent login shell's exported environment, and jhlp_init/jhlp_bashrc
 # drop TMOUT and restore HISTTIMEFORMAT.
 defshell bash
 vbell "off"

@@ -1,0 +1,18 @@
+# Startup operations for every POSIX shell (bash, zsh, ...). Sourced from jhlp_bashrc and jhlp_zshrc.
+
+# Drop any inherited TMOUT so interactive panes don't auto-log-out. In a non-login pane
+# TMOUT is inherited as a writable variable (the read-only attribute set by
+# /etc/profile.d does not survive exec), so this succeeds; in a login shell where it is
+# read-only the attempt is silently ignored. Both bash and zsh honour TMOUT.
+unset TMOUT 2>/dev/null || true
+
+# Minimal hosts have no auto-update cron, so their interactive shells pull this repository
+# in the background, at most once an hour. Hosts with the cron are left alone.
+case $- in
+  *i*)
+    if [ -f ~/.jhlp_minimal ] && [ -z "$(find ~/.jhlp_last_pull -mmin -60 2>/dev/null)" ]; then
+      touch ~/.jhlp_last_pull
+      (GIT_TERMINAL_PROMPT=0 git -C ~/.jaime-hablutzel-linux-profile pull -q --ff-only >/dev/null 2>&1 &)
+    fi
+    ;;
+esac

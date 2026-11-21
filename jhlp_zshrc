@@ -6,6 +6,7 @@ case ":$PATH:" in
   *) export PATH="$HOME/.jaime-hablutzel-linux-profile/bin:$PATH" ;;
 esac
 
+source ~/.jaime-hablutzel-linux-profile/jhlp_init
 source ~/.jaime-hablutzel-linux-profile/jhlp_aliases
 
 export VISUAL=vim EDITOR=vim GIT_EDITOR=vim

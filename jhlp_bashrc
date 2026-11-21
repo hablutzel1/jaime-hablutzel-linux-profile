@@ -5,6 +5,7 @@ case ":$PATH:" in
   *) export PATH="$HOME/.jaime-hablutzel-linux-profile/bin:$PATH" ;;
 esac
 
+. ~/.jaime-hablutzel-linux-profile/jhlp_init
 . ~/.jaime-hablutzel-linux-profile/jhlp_aliases
 
 # Timestamp the history. On hosts where /etc/profile.d already sets this read-only, keep
