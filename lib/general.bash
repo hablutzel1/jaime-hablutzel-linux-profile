@@ -55,6 +55,99 @@ sudo iptables -n -v --line-numbers -L $@
 }
 
 ###########################
+# sudo related
+###########################
+
+# Prints the user a NOPASSWD grant is for: the one I logged in as, also from a root shell opened
+# with jh_super or sudo (then $USER is root and $SUDO_USER is me).
+__jh_nopasswd_user() {
+  local u
+  if [ "$(id -u)" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+    u=$SUDO_USER
+    if [ -n "$SUDO_UID" ] && [ "$(id -u "$u" 2>/dev/null)" != "$SUDO_UID" ]; then
+      echo "SUDO_USER ($u) does not match SUDO_UID ($SUDO_UID); refusing." >&2
+      return 1
+    fi
+  else
+    u=$(id -un)
+  fi
+  # Only plain names: sudo's includedir silently skips file names with a "." or ending in "~".
+  case $u in
+    '' | *[!a-z0-9_-]* | [0-9-]*)
+      echo "Unexpected user name '$u'; refusing." >&2
+      return 1 ;;
+    root)
+      echo "Refusing to grant root; run it as my own user, or from jh_super." >&2
+      return 1 ;;
+  esac
+  id -u "$u" >/dev/null 2>&1 || { echo "No such user: $u" >&2; return 1; }
+  printf '%s\n' "$u"
+}
+
+# Lets the current user (see __jh_nopasswd_user) run sudo without a password, through /etc/sudoers.d/<user>.
+jh_nopasswd_grant() {
+  local u f staged tmp line
+  u=$(__jh_nopasswd_user) || return 1
+  f=/etc/sudoers.d/$u
+  line="$u ALL=(ALL) NOPASSWD: ALL"
+  if sudo test -e "$f" || sudo test -L "$f"; then
+    if [ "$(sudo cat "$f")" = "$line" ]; then
+      echo "Already granted in $f."
+      return 0
+    fi
+    echo "Refusing to overwrite $f, which has other content:" >&2
+    sudo cat "$f" >&2
+    return 1
+  fi
+  if ! sudo grep -Eq '^[#@]includedir[[:space:]]+(/private)?/etc/sudoers\.d/?[[:space:]]*$' /etc/sudoers; then
+    echo "/etc/sudoers does not include /etc/sudoers.d; nothing changed." >&2
+    return 1
+  fi
+  tmp=$(mktemp) || return 1
+  printf '%s\n' "$line" > "$tmp"
+  # Staged under a name with a "." (skipped by includedir), so it is never live until checked, then
+  # renamed into place atomically. A broken sudoers file would lock sudo out entirely.
+  staged="$f.jhlp-staged"
+  if sudo install -m 0440 -o 0 -g 0 "$tmp" "$staged" \
+    && sudo visudo -cqf "$staged" >/dev/null \
+    && sudo mv -f "$staged" "$f"; then
+    rm -f "$tmp"
+  else
+    rm -f "$tmp"
+    sudo rm -f "$staged"
+    echo "Failed; nothing changed." >&2
+    return 1
+  fi
+  if ! sudo visudo -cq >/dev/null; then
+    echo "The full sudoers check failed after adding $f; removing it." >&2
+    sudo rm -f "$f"
+    return 1
+  fi
+  echo "Granted NOPASSWD sudo to $u in $f."
+}
+
+# Undoes jh_nopasswd_grant. Removes /etc/sudoers.d/<user> only if it holds exactly the line that
+# jh_nopasswd_grant writes, so a grant managed by someone else is never deleted.
+jh_nopasswd_revoke() {
+  local u f line
+  u=$(__jh_nopasswd_user) || return 1
+  f=/etc/sudoers.d/$u
+  line="$u ALL=(ALL) NOPASSWD: ALL"
+  if ! sudo test -e "$f" && ! sudo test -L "$f"; then
+    echo "Nothing to revoke: $f does not exist."
+    return 0
+  fi
+  if [ "$(sudo cat "$f")" != "$line" ]; then
+    echo "Refusing to remove $f, which was not written by jh_nopasswd_grant:" >&2
+    sudo cat "$f" >&2
+    return 1
+  fi
+  sudo rm -f "$f" || return 1
+  sudo visudo -cq >/dev/null || { echo "The sudoers check fails after removing $f." >&2; return 1; }
+  echo "Revoked NOPASSWD sudo from $u: removed $f."
+}
+
+###########################
 # Crypto related
 ###########################
 
