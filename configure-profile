@@ -227,7 +227,11 @@ fi
 # Multiplexers setup: Starting tmux or screen automatically on login
 cp $DIR/.tmux.conf ~/.tmux.conf
 if is_bash; then
-  append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then tmux new-session -A -s main; fi'
+  append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then tmux new-session -A -s human; fi'
+fi
+# Renaming the login session from its former name, so that a running one is reattached instead of a new one started.
+if command -v tmux >/dev/null 2>&1 && tmux has-session -t =main 2>/dev/null && ! tmux has-session -t =human 2>/dev/null; then
+  tmux rename-session -t =main human
 fi
 # TODO try to include a custom ~/.jhlp_screenrc from the main ~/.screenrc instead of overwriting
 # TODO maybe indicate/warn if this file was "updated" or "overwritten"
