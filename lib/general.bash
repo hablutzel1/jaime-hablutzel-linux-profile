@@ -9,6 +9,11 @@ jh_urlencode() { python -c "import urllib; print urllib.quote('''$1''', '')"; }
 # To allow to visually differentiate STDOUT from STDERR
 jh_color() { "$@" 2>&1>&3|sed 's,.*,\x1B[31m&\x1B[0m,'>&2; } 3>&1
 
+# Pull this repository now; the post-merge hook then re-runs configure-profile.
+jh_update_profile() {
+  git -C ~/.jaime-hablutzel-linux-profile pull --ff-only && echo "Open a new terminal to load the changes."
+}
+
 jh_mine () {
 # TODO prompt for confirmation if I'm outside my home folder.
 # TODO check if it works if we are the "root" user itself.
@@ -19,6 +24,12 @@ else
   chown -R $SUDO_USER .
 fi
 }
+
+###########################
+# PVE hosts related
+###########################
+# TODO try to provide the container's console password too.
+jh_console() { sudo pct console "$1" -escape '^l'; }
 
 #########################
 # Clipboard management

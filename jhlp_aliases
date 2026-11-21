@@ -8,11 +8,6 @@
 
 alias diff='diff --color -u'
 
-# Pull this repository now; the post-merge hook then re-runs configure-profile.
-jh_update_profile() {
-  git -C ~/.jaime-hablutzel-linux-profile pull --ff-only && echo "Open a new terminal to load the changes."
-}
-
 alias jh_la="ls -la"
 alias jh_lat="ls -lat"
 
@@ -35,13 +30,6 @@ alias jh_n='echo processCompletedNotificationForITerm2!'
 # TODO check is it really good practice to put 'sudo' in aliases definitions?.
 alias jh_iln='sudo iptables -L -t nat -n -v --line-numbers '
 alias jh_il6='sudo ip6tables -L -n -v --line-numbers'
-
-###########################
-# PVE hosts related
-###########################
-# TODO try to provide the default password too, i.e. 'secret'.
-# TODO check if the following $1 is really working as this technique didn't work for pem_certs being an alias.
-alias jh_console="sudo pct console $1 -escape '^l'"
 
 ###########################
 # Git repositories related, e.g. etckeeper
