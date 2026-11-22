@@ -12,8 +12,10 @@ host within minutes.
 - Never commit secrets: passwords, default or shared passwords, API keys, tokens, private keys, or
   anything derived from them.
 - Never commit details that help map my infrastructure: internal host names, IP addresses, internal
-  domains, user names other than `jhablutzel`, client or employer names, or which hosts or accounts
-  share a credential. Write comments and TODOs with generic wording instead.
+  domains, user names other than `jhablutzel`, or which hosts or accounts share a credential. Write
+  comments and TODOs with generic wording instead.
+- Never mention any company except Blobfish, my own: no client, employer or partner names, in files,
+  comments or commit messages.
 - Keep host-specific or private configuration out of the repository and read it at run time from
   files outside it, as `configure-profile` already does with `~/.ssh/authorized_keys_host_specific`.
 - Treat every change to `configure-profile`, `git_hooks/` and `authorized_keys_global` as security
