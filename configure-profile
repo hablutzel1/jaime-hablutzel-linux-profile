@@ -159,6 +159,27 @@ if is_bash; then
   # Match only my own unindented line, so the indented PS1 lines in the stock ~/.bashrc
   # (inside its "if [ "$color_prompt" = yes ]" block) are left intact.
   append_bashrc '^[^ ].*PS1=' 'if [ "$(id -u)" = 0 ]; then PS1="\[\033[01;31m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "; else PS1="\[\033[01;'$random_color'm\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\n\\$ "; fi'
+  # Repair: the earlier bare 'PS1=' pattern above deleted the three indented PS1 lines of the
+  # stock Debian/Ubuntu ~/.bashrc, leaving an empty "then"/"else" (a syntax error that stops
+  # ~/.bashrc before jhlp_bashrc) and an empty xterm title case. Put them back where that exact
+  # shape is found; a no-op otherwise. TODO remove once every host has run it.
+  if [ -f ~/.bashrc ]; then
+    s1='    PS1='\''${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '\'''
+    s2='    PS1='\''${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '\'''
+    s3='    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"'
+    # ENVIRON instead of awk -v, which would interpret the backslashes.
+    s1=$s1 s2=$s2 s3=$s3 awk '
+      state == 1 && $0 == "else" { print ENVIRON["s1"]; print; state = 2; next }
+      state == 2 && $0 == "fi" { print ENVIRON["s2"] }
+      xterm && $0 == "    ;;" { print ENVIRON["s3"] }
+      { state = ($0 == "if [ \"$color_prompt\" = yes ]; then"); xterm = ($0 == "xterm*|rxvt*)"); print }
+    ' ~/.bashrc > ~/.bashrc.jhlp-repair &&
+      if ! cmp -s ~/.bashrc ~/.bashrc.jhlp-repair; then
+        # cat instead of mv, to keep the permissions and any symlink of ~/.bashrc.
+        cat ~/.bashrc.jhlp-repair > ~/.bashrc && echo "Restored the stock PS1 lines in ~/.bashrc."
+      fi
+    rm -f ~/.bashrc.jhlp-repair
+  fi
 
   # Aliases, commands in bin/, and Bash-only functions. It has been observed that .bash_aliases is named .alias in systems like openSUSE, so we prefer to use our own file just to keep it agnostic from every different distribution.
   append_bashrc 'jhlp_bashrc' "test -s ~/.jaime-hablutzel-linux-profile/jhlp_bashrc && . ~/.jaime-hablutzel-linux-profile/jhlp_bashrc || true"
