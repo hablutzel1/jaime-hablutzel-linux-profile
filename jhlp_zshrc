@@ -9,6 +9,9 @@ esac
 source ~/.jaime-hablutzel-linux-profile/jhlp_init
 source ~/.jaime-hablutzel-linux-profile/jhlp_aliases
 
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd jhlp_check_profile_update
+
 export VISUAL=vim EDITOR=vim GIT_EDITOR=vim
 export LESS="-i -R" LESSCHARSET=utf-8
 

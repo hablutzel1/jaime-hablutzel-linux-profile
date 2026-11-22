@@ -403,4 +403,8 @@ rmdir ~/.config/nvim/pack/Exafunction/start ~/.config/nvim/pack/Exafunction ~/.c
 rm -f ~/.bash_aliases_jh ~/.bash_aliases_jh_crypto
 remove_all_matches '\.bash_aliases_jh'
 
+# The commit just applied, for interactive shells to tell they are outdated (see jhlp_init).
+# Through a temporary file, so a prompt never reads it half written.
+git -C "$DIR" rev-parse HEAD > ~/.jhlp_applied_commit.tmp && mv ~/.jhlp_applied_commit.tmp ~/.jhlp_applied_commit
+
 echo "Jaime Hablutzel's configuration applied."

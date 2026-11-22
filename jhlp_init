@@ -16,3 +16,22 @@ case $- in
     fi
     ;;
 esac
+
+# Say once, at the next prompt, that this shell is outdated: configure-profile writes the commit it
+# applied to ~/.jhlp_applied_commit (it runs after every pull that brings changes), and this shell
+# compares it with the one it loaded. Called from PROMPT_COMMAND (jhlp_bashrc) and precmd (jhlp_zshrc).
+# TODO check whether a new shell always suffices, e.g. a ~/.tmux.conf change needs tmux to reload it.
+jhlp_read_applied_commit() {
+  jhlp_applied_commit=
+  { read -r jhlp_applied_commit < ~/.jhlp_applied_commit; } 2>/dev/null
+}
+jhlp_check_profile_update() {
+  jhlp_read_applied_commit
+  if [ -n "$jhlp_loaded_commit" ] && [ -n "$jhlp_applied_commit" ] &&
+    [ "$jhlp_applied_commit" != "$jhlp_loaded_commit" ] && [ "$jhlp_applied_commit" != "$jhlp_notified_commit" ]; then
+    jhlp_notified_commit=$jhlp_applied_commit
+    printf '%s\n' "jaime-hablutzel-linux-profile was updated after this shell started: open a new shell." >&2
+  fi
+}
+jhlp_read_applied_commit
+jhlp_loaded_commit=$jhlp_applied_commit

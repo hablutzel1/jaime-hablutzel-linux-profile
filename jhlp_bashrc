@@ -8,6 +8,12 @@ esac
 . ~/.jaime-hablutzel-linux-profile/jhlp_init
 . ~/.jaime-hablutzel-linux-profile/jhlp_aliases
 
+case $PROMPT_COMMAND in
+  *jhlp_check_profile_update*) ;;
+  # A newline as separator, which, unlike ';', is valid even after a trailing ';'.
+  *) PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}jhlp_check_profile_update" ;;
+esac
+
 # Timestamp the history. On hosts where /etc/profile.d already sets this read-only, keep
 # theirs; otherwise set our own (matching their format), so non-login panes that skip
 # /etc/profile.d still record and show history timestamps.
