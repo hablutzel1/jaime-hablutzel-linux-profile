@@ -249,6 +249,11 @@ fi
 # SSH logins also start a detached "ai" session if there is none, for agent commands to run in.
 # Until an agent first uses it, it holds a plain shell, which the agent then replaces.
 cp $DIR/.tmux.conf ~/.tmux.conf
+# A running tmux server read the config only when it started, and the "ai" session keeps it running
+# across logins, so reload the config into it. Settings removed from the file stay until jh_tmux_kill_server.
+if command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
+  tmux source-file ~/.tmux.conf
+fi
 if is_bash; then
   append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then [ -n "$SSH_CONNECTION" ] && { tmux has-session -t =ai 2>/dev/null || tmux new-session -d -s ai -n ai -c "$HOME"; }; tmux new-session -A -s human; fi'
 fi
