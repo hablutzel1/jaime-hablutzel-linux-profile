@@ -95,36 +95,100 @@ __jh_nopasswd_user() {
   printf '%s\n' "$u"
 }
 
-# Lets the current user (see __jh_nopasswd_user) run sudo without a password, through /etc/sudoers.d/<user>.
+# Succeeds if $2 is a line jh_nopasswd_grant writes for user $1, with or without the NOTAFTER expiry
+# that older versions did not add.
+__jh_nopasswd_is_own_line() {
+  local re="^$1 ALL=\\(ALL\\)( NOTAFTER=[0-9]{14}Z)? NOPASSWD: ALL\$"
+  [[ $2 =~ $re ]]
+}
+
+# Formats the epoch time $1 in UTC with the date format $2, with GNU or BSD date.
+__jh_utc_date() {
+  date -u -d "@$1" "$2" 2>/dev/null || date -u -r "$1" "$2"
+}
+
+# Name of the systemd units that end the grant of user $1 where sudo has no NOTAFTER.
+__jh_nopasswd_timer() {
+  printf 'jhlp-nopasswd-expire-%s\n' "$1"
+}
+
+# Cancels the systemd timer that would end the grant of user $1, if there is one.
+__jh_nopasswd_cancel_timer() {
+  local unit
+  command -v systemctl >/dev/null 2>&1 || return 0
+  unit=$(__jh_nopasswd_timer "$1")
+  sudo systemctl stop "$unit.timer" "$unit.service" >/dev/null 2>&1
+  sudo systemctl reset-failed "$unit.timer" "$unit.service" >/dev/null 2>&1
+  return 0
+}
+
+# Installs the sudoers line $2 as file $1, owned by root with mode 0440, and checks it with visudo.
+__jh_nopasswd_stage() {
+  local tmp ok=1
+  tmp=$(mktemp) || return 1
+  printf '%s\n' "$2" > "$tmp"
+  sudo install -m 0440 -o 0 -g 0 "$tmp" "$1" && sudo visudo -cqf "$1" >/dev/null && ok=0
+  rm -f "$tmp"
+  return $ok
+}
+
+# Lets the current user (see __jh_nopasswd_user) run sudo without a password for a limited time,
+# through /etc/sudoers.d/<user>.
 jh_nopasswd_grant() {
-  local u f staged tmp line
+  local u f staged line current hours=6 until verb=Granted timer= unit how='sudoers NOTAFTER'
+  case ${1-} in
+    -h | --help)
+      cat <<'EOF'
+Usage: jh_nopasswd_grant [HOURS]
+
+Lets the current user run sudo without a password for HOURS hours (default 6), through
+/etc/sudoers.d/<user>, whose sudoers NOTAFTER option ends the grant by itself. Where sudo has no
+NOTAFTER (sudo before 1.8.20, sudo-rs), a systemd timer removes the file instead; without systemd,
+the grant does not expire and a warning says so. Running it again renews the grant for HOURS hours
+from now. jh_nopasswd_revoke ends it earlier.
+EOF
+      return 0 ;;
+    '') ;;
+    *[!0-9]* | 0* | ?????*)
+      echo "HOURS must be a whole number from 1 to 9999: $1" >&2
+      return 2 ;;
+    *) hours=$1 ;;
+  esac
+  if [ $# -gt 1 ]; then
+    echo "Usage: jh_nopasswd_grant [HOURS]" >&2
+    return 2
+  fi
   u=$(__jh_nopasswd_user) || return 1
   f=/etc/sudoers.d/$u
-  line="$u ALL=(ALL) NOPASSWD: ALL"
   if sudo test -e "$f" || sudo test -L "$f"; then
-    if [ "$(sudo cat "$f")" = "$line" ]; then
-      echo "Already granted in $f."
-      return 0
+    current=$(sudo cat "$f")
+    if ! __jh_nopasswd_is_own_line "$u" "$current"; then
+      echo "Refusing to overwrite $f, which has other content:" >&2
+      printf '%s\n' "$current" >&2
+      return 1
     fi
-    echo "Refusing to overwrite $f, which has other content:" >&2
-    sudo cat "$f" >&2
-    return 1
+    verb=Renewed
   fi
   if ! sudo grep -Eq '^[#@]includedir[[:space:]]+(/private)?/etc/sudoers\.d/?[[:space:]]*$' /etc/sudoers; then
     echo "/etc/sudoers does not include /etc/sudoers.d; nothing changed." >&2
     return 1
   fi
-  tmp=$(mktemp) || return 1
-  printf '%s\n' "$line" > "$tmp"
+  until=$(($(date -u +%s) + hours * 3600))
   # Staged under a name with a "." (skipped by includedir), so it is never live until checked, then
   # renamed into place atomically. A broken sudoers file would lock sudo out entirely.
   staged="$f.jhlp-staged"
-  if sudo install -m 0440 -o 0 -g 0 "$tmp" "$staged" \
-    && sudo visudo -cqf "$staged" >/dev/null \
-    && sudo mv -f "$staged" "$f"; then
-    rm -f "$tmp"
-  else
-    rm -f "$tmp"
+  line="$u ALL=(ALL) NOTAFTER=$(__jh_utc_date "$until" +%Y%m%d%H%M%SZ) NOPASSWD: ALL"
+  if ! __jh_nopasswd_stage "$staged" "$line" 2>/dev/null; then
+    line="$u ALL=(ALL) NOPASSWD: ALL"
+    timer=1
+    if ! __jh_nopasswd_stage "$staged" "$line"; then
+      sudo rm -f "$staged"
+      echo "Failed; nothing changed." >&2
+      return 1
+    fi
+  fi
+  __jh_nopasswd_cancel_timer "$u"
+  if ! sudo mv -f "$staged" "$f"; then
     sudo rm -f "$staged"
     echo "Failed; nothing changed." >&2
     return 1
@@ -134,27 +198,46 @@ jh_nopasswd_grant() {
     sudo rm -f "$f"
     return 1
   fi
-  echo "Granted NOPASSWD sudo to $u in $f."
+  if [ -n "$timer" ]; then
+    # The command holds no "$", which systemd would expand. It removes the file only if it still
+    # holds just this line.
+    unit=$(__jh_nopasswd_timer "$u")
+    if [ -d /run/systemd/system ] && command -v systemd-run >/dev/null 2>&1 \
+      && sudo systemd-run --quiet --unit="$unit" --on-active="${hours}h" /bin/sh -c \
+        "grep -qxF '$line' '$f' && awk 'END { exit NR != 1 }' '$f' && rm -f '$f'"; then
+      how="the systemd timer $unit.timer"
+    else
+      echo "Warning: this sudo has no NOTAFTER and no systemd timer could be set, so the grant does" \
+        "not expire by itself; end it with jh_nopasswd_revoke." >&2
+      echo "$verb NOPASSWD sudo for $u in $f, with no expiry."
+      return 0
+    fi
+  fi
+  echo "$verb NOPASSWD sudo for $u in $f until $(__jh_utc_date "$until" '+%Y-%m-%d %H:%M UTC')" \
+    "($hours h, ended by $how)."
 }
 
-# Undoes jh_nopasswd_grant. Removes /etc/sudoers.d/<user> only if it holds exactly the line that
+# Undoes jh_nopasswd_grant. Removes /etc/sudoers.d/<user> only if it holds a line that
 # jh_nopasswd_grant writes, so a grant managed by someone else is never deleted.
 jh_nopasswd_revoke() {
-  local u f line
+  local u f
   u=$(__jh_nopasswd_user) || return 1
   f=/etc/sudoers.d/$u
-  line="$u ALL=(ALL) NOPASSWD: ALL"
+  __jh_nopasswd_cancel_timer "$u"
   if ! sudo test -e "$f" && ! sudo test -L "$f"; then
     echo "Nothing to revoke: $f does not exist."
     return 0
   fi
-  if [ "$(sudo cat "$f")" != "$line" ]; then
+  if ! __jh_nopasswd_is_own_line "$u" "$(sudo cat "$f")"; then
     echo "Refusing to remove $f, which was not written by jh_nopasswd_grant:" >&2
     sudo cat "$f" >&2
     return 1
   fi
-  sudo rm -f "$f" || return 1
-  sudo visudo -cq >/dev/null || { echo "The sudoers check fails after removing $f." >&2; return 1; }
+  # One sudo call: once the file is gone, sudo may need a password again.
+  if ! sudo sh -c 'rm -f "$1" && visudo -cq >/dev/null' sh "$f"; then
+    echo "Could not remove $f, or the sudoers check fails after removing it." >&2
+    return 1
+  fi
   echo "Revoked NOPASSWD sudo from $u: removed $f."
 }
 
