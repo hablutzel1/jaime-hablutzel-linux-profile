@@ -109,9 +109,9 @@ __jh_nopasswd_user() {
 }
 
 # Succeeds if $2 is a line jh_nopasswd_grant writes for user $1, with or without the NOTAFTER expiry
-# that older versions did not add.
+# and its readable comment, which older versions did not add.
 __jh_nopasswd_is_own_line() {
-  local re="^$1 ALL=\\(ALL\\)( NOTAFTER=[0-9]{14}Z)? NOPASSWD: ALL\$"
+  local re="^$1 ALL=\\(ALL\\)( NOTAFTER=[0-9]{14}Z)? NOPASSWD: ALL( # Expires [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC)?\$"
   [[ $2 =~ $re ]]
 }
 
@@ -197,6 +197,7 @@ EOF
   # renamed into place atomically. A broken sudoers file would lock sudo out entirely.
   staged="$f.jhlp-staged"
   line="$u ALL=(ALL) NOTAFTER=$(__jh_utc_date "$until" +%Y%m%d%H%M%SZ) NOPASSWD: ALL"
+  line="$line # Expires $(__jh_utc_date "$until" '+%Y-%m-%d %H:%M:%S UTC')"
   if ! __jh_nopasswd_stage "$staged" "$line" 2>/dev/null; then
     line="$u ALL=(ALL) NOPASSWD: ALL"
     timer=1
