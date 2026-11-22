@@ -14,6 +14,9 @@ jh_update_profile() {
   git -C ~/.jaime-hablutzel-linux-profile pull --ff-only && echo "Open a new terminal to load the changes."
 }
 
+# Kill my tmux server and all its sessions, e.g. to drop settings no longer in ~/.tmux.conf.
+jh_tmux_kill_server() { tmux kill-server; }
+
 jh_mine () {
 # TODO prompt for confirmation if I'm outside my home folder.
 # TODO check if it works if we are the "root" user itself.
