@@ -145,10 +145,16 @@ __jh_nopasswd_stage() {
   return $ok
 }
 
+# Prints the problems the full sudoers check reports, one per line, leaving out the files it parsed OK.
+__jh_sudoers_problems() {
+  sudo visudo -c 2>&1 | grep -v ': parsed OK$'
+  return 0
+}
+
 # Lets the current user (see __jh_nopasswd_user) run sudo without a password for a limited time,
 # through /etc/sudoers.d/<user>.
 jh_nopasswd_grant() {
-  local u f staged line current hours=6 until verb=Granted timer= unit how='sudoers NOTAFTER'
+  local u f staged line current before after hours=6 until verb=Granted timer= unit how='sudoers NOTAFTER'
   case ${1-} in
     -h | --help)
       cat <<'EOF'
@@ -201,15 +207,25 @@ EOF
     fi
   fi
   __jh_nopasswd_cancel_timer "$u"
+  # Problems other files already had, e.g. bad permissions, are ignored below.
+  before=$(__jh_sudoers_problems)
   if ! sudo mv -f "$staged" "$f"; then
     sudo rm -f "$staged"
     echo "Failed; nothing changed." >&2
     return 1
   fi
-  if ! sudo visudo -cq >/dev/null; then
-    echo "The full sudoers check failed after adding $f; removing it." >&2
-    sudo rm -f "$f"
-    return 1
+  after=$(__jh_sudoers_problems)
+  if [ -n "$after" ]; then
+    # Fails on a problem in $f, or on any the check did not report before adding it.
+    if printf '%s\n' "$after" | grep -F "$f" >/dev/null \
+      || printf '%s\n' "$after" | grep -vxF -f <(printf '%s\n' "$before") >/dev/null; then
+      echo "The full sudoers check failed after adding $f; removing it:" >&2
+      printf '%s\n' "$after" >&2
+      sudo rm -f "$f"
+      return 1
+    fi
+    echo "Ignoring problems the full sudoers check already reported in other files:" >&2
+    printf '%s\n' "$after" >&2
   fi
   if [ -n "$timer" ]; then
     # The command holds no "$", which systemd would expand. It removes the file only if it still
@@ -246,9 +262,10 @@ jh_nopasswd_revoke() {
     sudo cat "$f" >&2
     return 1
   fi
-  # One sudo call: once the file is gone, sudo may need a password again.
-  if ! sudo sh -c 'rm -f "$1" && visudo -cq >/dev/null' sh "$f"; then
-    echo "Could not remove $f, or the sudoers check fails after removing it." >&2
+  # Removing a file that holds only our line cannot break the rest of sudoers, so no full check, which
+  # would also fail on problems other files already have.
+  if ! sudo rm -f "$f"; then
+    echo "Could not remove $f." >&2
     return 1
   fi
   echo "Revoked NOPASSWD sudo from $u: removed $f."
