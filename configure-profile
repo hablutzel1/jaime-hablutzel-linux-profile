@@ -250,7 +250,7 @@ fi
 # Until an agent first uses it, it holds a plain shell, which the agent then replaces.
 cp $DIR/.tmux.conf ~/.tmux.conf
 # A running tmux server read the config only when it started, and the "ai" session keeps it running
-# across logins, so reload the config into it. Settings removed from the file stay until jh_tmux_kill_server.
+# across logins, so reload the config into it. Settings removed from the file stay until jh_tmux_reset.
 if command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
   tmux source-file ~/.tmux.conf
 fi

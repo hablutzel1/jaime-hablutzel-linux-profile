@@ -14,8 +14,18 @@ jh_update_profile() {
   git -C ~/.jaime-hablutzel-linux-profile pull --ff-only && echo "Open a new terminal to load the changes."
 }
 
-# Kill my tmux server and all its sessions, e.g. to drop settings no longer in ~/.tmux.conf.
-jh_tmux_kill_server() { tmux kill-server; }
+# Kill my tmux server and all its sessions, e.g. to drop settings no longer in ~/.tmux.conf, then
+# start the "ai" session again, detached, as an SSH login does. Run from inside tmux, it ends the
+# current pane too; outside tmux, it then attaches the "human" session.
+jh_tmux_reset() {
+  # Survive the hangup kill-server sends to the panes when run from inside tmux.
+  trap '' HUP
+  tmux kill-server 2> /dev/null
+  tmux new-session -d -s ai -n ai -c "$HOME" || return
+  if [ -z "$TMUX" ]; then
+    tmux new-session -A -s human
+  fi
+}
 
 jh_mine () {
 # TODO prompt for confirmation if I'm outside my home folder.
