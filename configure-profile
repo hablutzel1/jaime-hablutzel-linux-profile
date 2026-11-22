@@ -246,9 +246,11 @@ if is_interactive && ! is_minimal && [ -z "$JHLP_NO_MULTIPLEXER" ] && ( ! comman
   esac
 fi
 # Multiplexers setup: Starting tmux or screen automatically on login
+# SSH logins also start a detached "ai" session if there is none, for agent commands to run in.
+# Until an agent first uses it, it holds a plain shell, which the agent then replaces.
 cp $DIR/.tmux.conf ~/.tmux.conf
 if is_bash; then
-  append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then tmux new-session -A -s human; fi'
+  append_profile_file 'tmux new-session' 'if [ -z "$JHLP_PREFER_SCREEN" ] && [ -z "$JHLP_NO_MULTIPLEXER" ] && { [ -z "$STY" ] && [ -z "$TMUX" ]; }; then [ -n "$SSH_CONNECTION" ] && { tmux has-session -t =ai 2>/dev/null || tmux new-session -d -s ai -n ai -c "$HOME"; }; tmux new-session -A -s human; fi'
 fi
 # Renaming the login session from its former name, so that a running one is reattached instead of a new one started.
 if command -v tmux >/dev/null 2>&1 && tmux has-session -t =main 2>/dev/null && ! tmux has-session -t =human 2>/dev/null; then
