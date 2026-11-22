@@ -11,9 +11,10 @@ alias diff='diff --color -u'
 alias jh_la="ls -la"
 alias jh_lat="ls -lat"
 
-# Using autossh by default for automatic reconnections.
+# Using autossh by default for automatic reconnections. AUTOSSH_POLL=15 caps
+# its backoff between failed reconnections at 15 seconds (default 600).
 if [ -x "$(command -v autossh)" ]; then
-  alias ssh="$(which autossh) -M 0"
+  alias ssh="AUTOSSH_POLL=15 $(which autossh) -M 0"
 fi
 
 # An iTerm2 Trigger is expected to be set up for the output of this alias.
