@@ -34,7 +34,11 @@ host within minutes.
 - An alias that would need arguments in the middle (`$1`) is a function in `lib/*.bash` instead.
 - Code that runs at shell startup, not on demand, goes in `jhlp_init`.
 
-## Commit and push every change
+## Commit every change, push only after I confirm
 
-Whenever you change any file in this repository, commit the change and push it right away to the
-branch's upstream (`origin`), in the same turn and without asking. One commit per logical change.
+Whenever you change any file in this repository, commit the change right away, in the same turn and
+without asking. One commit per logical change.
+
+Never push on your own. After committing, always ask me to confirm the push, with the agent's
+structured question tool where it has one, and push to the branch's upstream (`origin`) only after
+I confirm. A push reaches every host within minutes, so this applies to every push, however small.
