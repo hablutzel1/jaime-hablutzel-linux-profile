@@ -323,7 +323,17 @@ fi
 # Git configuration
 ####
 git config --global user.name "Jaime Hablutzel"
-git config --global user.email "hablutzel1@gmail.com"
+# Asked only on the first run, so an email set by hand on a host is kept. Without a terminal, the
+# default is set without asking.
+if [ -z "$(git config --global user.email)" ]; then
+  git_email="hablutzel1@gmail.com"
+  if is_interactive; then
+    printf 'Git email for this host [%s]: ' "$git_email"
+    read -r reply
+    [ -n "$reply" ] && git_email=$reply
+  fi
+  git config --global user.email "$git_email"
+fi
 # Recommended value for Unix like systems.
 git config --global core.autocrlf input
 
